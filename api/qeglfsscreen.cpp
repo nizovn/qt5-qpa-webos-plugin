@@ -51,9 +51,8 @@
 
 QT_BEGIN_NAMESPACE
 
-QEglFSScreen::QEglFSScreen(EGLDisplay dpy)
-    : m_dpy(dpy),
-      m_surface(EGL_NO_SURFACE),
+QEglFSScreen::QEglFSScreen()
+    : m_surface(NULL),
       m_cursor(0)
 {
     m_cursor = qt_egl_device_integration()->createCursor(this);
@@ -142,7 +141,7 @@ qreal QEglFSScreen::refreshRate() const
     return qt_egl_device_integration()->refreshRate();
 }
 
-void QEglFSScreen::setPrimarySurface(EGLSurface surface)
+void QEglFSScreen::setPrimarySurface(void *surface)
 {
     m_surface = surface;
 }

@@ -43,23 +43,21 @@
 #include <QtCore/QThread>
 #include <QtCore/QMutex>
 
-#include <screen/screen.h>
+#include <SDL.h>
 
 QT_BEGIN_NAMESPACE
 
 class QQnxScreenEventHandler;
 
-typedef QVarLengthArray<screen_event_t, 64> QQnxScreenEventArray;
+typedef QVarLengthArray<SDL_Event, 64> QQnxScreenEventArray;
 
 class QQnxScreenEventThread : public QThread
 {
     Q_OBJECT
 
 public:
-    QQnxScreenEventThread(screen_context_t context, QQnxScreenEventHandler *screenEventHandler);
+    QQnxScreenEventThread(QQnxScreenEventHandler *screenEventHandler);
     ~QQnxScreenEventThread();
-
-    static void injectKeyboardEvent(int flags, int sym, int mod, int scan, int cap);
 
     QQnxScreenEventArray *lock();
     void unlock();
@@ -73,7 +71,6 @@ Q_SIGNALS:
 private:
     void shutdown();
 
-    screen_context_t m_screenContext;
     QMutex m_mutex;
     QQnxScreenEventArray m_events;
     QQnxScreenEventHandler *m_screenEventHandler;

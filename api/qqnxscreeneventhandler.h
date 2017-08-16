@@ -42,65 +42,45 @@
 
 #include <qpa/qwindowsysteminterface.h>
 
-#include <screen/screen.h>
+#include <SDL.h>
+#include <PDL.h>
 
 QT_BEGIN_NAMESPACE
 
-class QQnxIntegration;
-class QQnxScreenEventFilter;
+class QEglFSIntegration;
 class QQnxScreenEventThread;
 
 class QQnxScreenEventHandler : public QObject
 {
     Q_OBJECT
 public:
-    explicit QQnxScreenEventHandler(QQnxIntegration *integration);
+    explicit QQnxScreenEventHandler(QEglFSIntegration *integration);
 
-    void addScreenEventFilter(QQnxScreenEventFilter *filter);
-    void removeScreenEventFilter(QQnxScreenEventFilter *filter);
+    bool handleEvent(SDL_Event event);
 
-    bool handleEvent(screen_event_t event);
-    bool handleEvent(screen_event_t event, int qnxType);
-
-    static void injectKeyboardEvent(int flags, int sym, int mod, int scan, int cap);
+    static void injectKeyboardEvent(SDL_Event event);
+    static void clearCurrentFocusObject();
+    static int handleSpecialKeys(SDLKey key, int def);
 
     void setScreenEventThread(QQnxScreenEventThread *eventThread);
-
-Q_SIGNALS:
-    void newWindowCreated(void *window);
-    void windowClosed(void *window);
-
-protected:
-    void timerEvent(QTimerEvent *event) override;
 
 private Q_SLOTS:
     void processEventsFromScreenThread();
 
 private:
-    void handleKeyboardEvent(screen_event_t event);
-    void handlePointerEvent(screen_event_t event);
-    void handleTouchEvent(screen_event_t event, int qnxType);
-    void handleCloseEvent(screen_event_t event);
-    void handleCreateEvent(screen_event_t event);
-    void handleDisplayEvent(screen_event_t event);
-    void handlePropertyEvent(screen_event_t event);
-    void handleKeyboardFocusPropertyEvent(screen_window_t window);
+    void handleKeyboardEvent(SDL_Event event);
+    void handleTouchEvent(SDL_Event event);
+    void handleActiveEvent(SDL_Event event);
 
 private:
     enum {
-        MaximumTouchPoints = 10
+        MaximumTouchPoints = 5
     };
 
-    QQnxIntegration *m_qnxIntegration;
-    QPoint m_lastGlobalMousePoint;
-    QPoint m_lastLocalMousePoint;
-    Qt::MouseButtons m_lastButtonState;
-    screen_window_t m_lastMouseWindow;
+    QEglFSIntegration *m_qnxIntegration;
     QTouchDevice *m_touchDevice;
     QWindowSystemInterface::TouchPoint m_touchPoints[MaximumTouchPoints];
-    QList<QQnxScreenEventFilter*> m_eventFilters;
     QQnxScreenEventThread *m_eventThread;
-    int m_focusLostTimer;
 };
 
 QT_END_NAMESPACE

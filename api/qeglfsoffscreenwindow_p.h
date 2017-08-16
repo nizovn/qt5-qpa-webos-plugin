@@ -59,17 +59,15 @@ QT_BEGIN_NAMESPACE
 class Q_EGLFS_EXPORT QEglFSOffscreenWindow : public QPlatformOffscreenSurface
 {
 public:
-    QEglFSOffscreenWindow(EGLDisplay display, const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface);
+    QEglFSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface);
     ~QEglFSOffscreenWindow();
 
     QSurfaceFormat format() const override { return m_format; }
-    bool isValid() const override { return m_surface != EGL_NO_SURFACE; }
+    bool isValid() const override { return m_surface != NULL; }
 
 private:
     QSurfaceFormat m_format;
-    EGLDisplay m_display;
-    EGLSurface m_surface;
-    EGLNativeWindowType m_window;
+    void *m_surface;
 };
 
 QT_END_NAMESPACE

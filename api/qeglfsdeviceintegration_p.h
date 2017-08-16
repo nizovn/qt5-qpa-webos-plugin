@@ -72,8 +72,6 @@ public:
 
     virtual void platformInit();
     virtual void platformDestroy();
-    virtual EGLNativeDisplayType platformDisplay() const;
-    virtual EGLDisplay createDisplay(EGLNativeDisplayType nativeDisplay);
     virtual bool usesDefaultScreen();
     virtual void screenInit();
     virtual void screenDestroy();
@@ -87,16 +85,9 @@ public:
     virtual QImage::Format screenFormat() const;
     virtual qreal refreshRate() const;
     virtual QSurfaceFormat surfaceFormatFor(const QSurfaceFormat &inputFormat) const;
-    virtual EGLint surfaceType() const;
     virtual QEglFSWindow *createWindow(QWindow *window) const;
-    virtual EGLNativeWindowType createNativeWindow(QPlatformWindow *platformWindow,
-                                                   const QSize &size,
-                                                   const QSurfaceFormat &format);
-    virtual EGLNativeWindowType createNativeOffscreenWindow(const QSurfaceFormat &format);
-    virtual void destroyNativeWindow(EGLNativeWindowType window);
     virtual bool hasCapability(QPlatformIntegration::Capability cap) const;
     virtual QPlatformCursor *createCursor(QPlatformScreen *screen) const;
-    virtual bool filterConfig(EGLDisplay display, EGLConfig config) const;
     virtual void waitForVSync(QPlatformSurface *surface) const;
     virtual void presentBuffer(QPlatformSurface *surface);
     virtual QByteArray fbDeviceName() const;
@@ -105,8 +96,6 @@ public:
     virtual bool supportsSurfacelessContexts() const;
 
     virtual void *wlDisplay() const;
-
-    static EGLConfig chooseConfig(EGLDisplay display, const QSurfaceFormat &format);
 };
 
 class Q_EGLFS_EXPORT QEglFSDeviceIntegrationPlugin : public QObject

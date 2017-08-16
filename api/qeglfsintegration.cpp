@@ -61,12 +61,6 @@
 #endif
 #include "qeglfsoffscreenwindow_p.h"
 
-#include <QtEglSupport/private/qeglconvenience_p.h>
-#ifndef QT_NO_OPENGL
-# include <QtEglSupport/private/qeglplatformcontext_p.h>
-# include <QtEglSupport/private/qeglpbuffer_p.h>
-#endif
-
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtServiceSupport/private/qgenericunixservices_p.h>
 #include <QtThemeSupport/private/qgenericunixthemes_p.h>
@@ -75,8 +69,6 @@
 #ifndef QT_NO_OPENGL
 # include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
 #endif
-
-#include <QtPlatformHeaders/QEGLNativeContext>
 
 #if QT_CONFIG(libinput)
 #include <QtInputSupport/private/qlibinputhandler_p.h>
@@ -98,6 +90,9 @@
 
 #include <QtPlatformHeaders/qeglfsfunctions.h>
 
+#include <SDL.h>
+#include <PDL.h>
+
 static void initResources()
 {
 #ifndef QT_NO_CURSOR
@@ -108,10 +103,11 @@ static void initResources()
 QT_BEGIN_NAMESPACE
 
 QEglFSIntegration::QEglFSIntegration()
-    : m_display(EGL_NO_DISPLAY),
-      m_inputContext(0),
+    : m_inputContext(0),
       m_fontDb(new QGenericUnixFontDatabase),
       m_services(new QGenericUnixServices),
+      m_screenEventHandler(new QQnxScreenEventHandler(this)),
+      m_screenEventThread(0),
       m_kbdMgr(0),
       m_disableInputHandlers(false)
 {
@@ -134,26 +130,19 @@ void QEglFSIntegration::initialize()
 {
     qt_egl_device_integration()->platformInit();
 
-    m_display = qt_egl_device_integration()->createDisplay(nativeDisplay());
-    if (Q_UNLIKELY(m_display == EGL_NO_DISPLAY))
-        qFatal("Could not open egl display");
+    PDL_Init(0);
 
-    EGLint major, minor;
-    if (Q_UNLIKELY(!eglInitialize(m_display, &major, &minor)))
-        qFatal("Could not initialize egl display");
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_SetVideoMode(0, 0, 32, SDL_OPENGL);
+    atexit(PDL_Quit);
+    atexit(SDL_Quit);
+    SDL_EnableUNICODE(true);
 
-    m_inputContext = QPlatformInputContextFactory::create();
+    addScreen(new QEglFSScreen(), true);
 
-    m_vtHandler.reset(new QFbVtHandler);
-
-    if (qt_egl_device_integration()->usesDefaultScreen())
-        addScreen(new QEglFSScreen(display()));
-    else
-        qt_egl_device_integration()->screenInit();
-
-    // Input code may rely on the screens, so do it only after the screen init.
-    if (!m_disableInputHandlers)
-        createInputHandlers();
+    m_inputContext = new QQnxInputContext(this);
+    m_screenEventThread = new QQnxScreenEventThread(m_screenEventHandler);
+    m_screenEventThread->start();
 }
 
 void QEglFSIntegration::destroy()
@@ -163,10 +152,10 @@ void QEglFSIntegration::destroy()
 
     qt_egl_device_integration()->screenDestroy();
 
-    if (m_display != EGL_NO_DISPLAY)
-        eglTerminate(m_display);
-
     qt_egl_device_integration()->platformDestroy();
+
+    SDL_Quit();
+    PDL_Quit();
 }
 
 QAbstractEventDispatcher *QEglFSIntegration::createEventDispatcher() const
@@ -218,37 +207,13 @@ QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
 #ifndef QT_NO_OPENGL
 QPlatformOpenGLContext *QEglFSIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
-    EGLDisplay dpy = context->screen() ? static_cast<QEglFSScreen *>(context->screen()->handle())->display() : display();
-    QPlatformOpenGLContext *share = context->shareHandle();
-    QVariant nativeHandle = context->nativeHandle();
-
-    QEglFSContext *ctx;
-    QSurfaceFormat adjustedFormat = qt_egl_device_integration()->surfaceFormatFor(context->format());
-    if (nativeHandle.isNull()) {
-        EGLConfig config = QEglFSDeviceIntegration::chooseConfig(dpy, adjustedFormat);
-        ctx = new QEglFSContext(adjustedFormat, share, dpy, &config, QVariant());
-    } else {
-        ctx = new QEglFSContext(adjustedFormat, share, dpy, 0, nativeHandle);
-    }
-    nativeHandle = QVariant::fromValue<QEGLNativeContext>(QEGLNativeContext(ctx->eglContext(), dpy));
-
-    context->setNativeHandle(nativeHandle);
-    return ctx;
+    return new QEglFSContext(context);
 }
 
 QPlatformOffscreenSurface *QEglFSIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
 {
-    EGLDisplay dpy = surface->screen() ? static_cast<QEglFSScreen *>(surface->screen()->handle())->display() : display();
     QSurfaceFormat fmt = qt_egl_device_integration()->surfaceFormatFor(surface->requestedFormat());
-    if (qt_egl_device_integration()->supportsPBuffers()) {
-        QEGLPlatformContext::Flags flags = 0;
-        if (!qt_egl_device_integration()->supportsSurfacelessContexts())
-            flags |= QEGLPlatformContext::NoSurfaceless;
-        return new QEGLPbuffer(dpy, fmt, surface, flags);
-    } else {
-        return new QEglFSOffscreenWindow(dpy, fmt, surface);
-    }
-    // Never return null. Multiple QWindows are not supported by this plugin.
+    return new QEglFSOffscreenWindow(fmt, surface);
 }
 #endif // QT_NO_OPENGL
 
@@ -259,10 +224,10 @@ bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
         return true;
 
     switch (cap) {
-    case ThreadedPixmaps: return true;
+    case ThreadedPixmaps: return false;
 #ifndef QT_NO_OPENGL
     case OpenGL: return true;
-    case ThreadedOpenGL: return true;
+    case ThreadedOpenGL: return false;
     case RasterGLSurface: return true;
 #else
     case OpenGL: return false;
@@ -279,146 +244,30 @@ QPlatformNativeInterface *QEglFSIntegration::nativeInterface() const
     return const_cast<QEglFSIntegration *>(this);
 }
 
-enum ResourceType {
-    EglDisplay,
-    EglWindow,
-    EglContext,
-    EglConfig,
-    NativeDisplay,
-    XlibDisplay,
-    WaylandDisplay,
-    EglSurface
-};
-
-static int resourceType(const QByteArray &key)
-{
-    static const QByteArray names[] = { // match ResourceType
-        QByteArrayLiteral("egldisplay"),
-        QByteArrayLiteral("eglwindow"),
-        QByteArrayLiteral("eglcontext"),
-        QByteArrayLiteral("eglconfig"),
-        QByteArrayLiteral("nativedisplay"),
-        QByteArrayLiteral("display"),
-        QByteArrayLiteral("server_wl_display"),
-        QByteArrayLiteral("eglsurface")
-    };
-    const QByteArray *end = names + sizeof(names) / sizeof(names[0]);
-    const QByteArray *result = std::find(names, end, key);
-    if (result == end)
-        result = std::find(names, end, key.toLower());
-    return int(result - names);
-}
-
 void *QEglFSIntegration::nativeResourceForIntegration(const QByteArray &resource)
 {
     void *result = 0;
-
-    switch (resourceType(resource)) {
-    case EglDisplay:
-        result = display();
-        break;
-    case NativeDisplay:
-        result = reinterpret_cast<void*>(nativeDisplay());
-        break;
-    case WaylandDisplay:
-        result = qt_egl_device_integration()->wlDisplay();
-        break;
-    default:
-        break;
-    }
-
     return result;
 }
 
 void *QEglFSIntegration::nativeResourceForScreen(const QByteArray &resource, QScreen *)
 {
     void *result = 0;
-
-    switch (resourceType(resource)) {
-    case XlibDisplay:
-        // Play nice when using the x11 hooks: Be compatible with xcb that allows querying
-        // the X Display pointer, which is nothing but our native display.
-        result = reinterpret_cast<void*>(nativeDisplay());
-        break;
-    default:
-        break;
-    }
-
     return result;
 }
 
 void *QEglFSIntegration::nativeResourceForWindow(const QByteArray &resource, QWindow *window)
 {
     void *result = 0;
-
-    switch (resourceType(resource)) {
-    case EglDisplay:
-        if (window && window->handle())
-            result = static_cast<QEglFSScreen *>(window->handle()->screen())->display();
-        else
-            result = display();
-        break;
-    case EglWindow:
-        if (window && window->handle())
-            result = reinterpret_cast<void*>(static_cast<QEglFSWindow *>(window->handle())->eglWindow());
-        break;
-    case EglSurface:
-        if (window && window->handle())
-            result = reinterpret_cast<void*>(static_cast<QEglFSWindow *>(window->handle())->surface());
-        break;
-    default:
-        break;
-    }
-
     return result;
 }
 
-#ifndef QT_NO_OPENGL
 void *QEglFSIntegration::nativeResourceForContext(const QByteArray &resource, QOpenGLContext *context)
 {
-    void *result = 0;
-
-    switch (resourceType(resource)) {
-    case EglContext:
-        if (context->handle())
-            result = static_cast<QEglFSContext *>(context->handle())->eglContext();
-        break;
-    case EglConfig:
-        if (context->handle())
-            result = static_cast<QEglFSContext *>(context->handle())->eglConfig();
-        break;
-    case EglDisplay:
-        if (context->handle())
-            result = static_cast<QEglFSContext *>(context->handle())->eglDisplay();
-        break;
-    default:
-        break;
-    }
-
-    return result;
 }
-
-static void *eglContextForContext(QOpenGLContext *context)
-{
-    Q_ASSERT(context);
-
-    QEglFSContext *handle = static_cast<QEglFSContext *>(context->handle());
-    if (!handle)
-        return 0;
-
-    return handle->eglContext();
-}
-#endif
 
 QPlatformNativeInterface::NativeResourceForContextFunction QEglFSIntegration::nativeResourceFunctionForContext(const QByteArray &resource)
 {
-#ifndef QT_NO_OPENGL
-    QByteArray lowerCaseResource = resource.toLower();
-    if (lowerCaseResource == "get_egl_context")
-        return NativeResourceForContextFunction(eglContextForContext);
-#else
-    Q_UNUSED(resource);
-#endif
     return 0;
 }
 
@@ -474,11 +323,6 @@ void QEglFSIntegration::createInputHandlers()
 #if QT_CONFIG(integrityhid)
    new QIntegrityHIDManager("HID", "", this);
 #endif
-}
-
-EGLNativeDisplayType QEglFSIntegration::nativeDisplay() const
-{
-    return qt_egl_device_integration()->platformDisplay();
 }
 
 QT_END_NAMESPACE

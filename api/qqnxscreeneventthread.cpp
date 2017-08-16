@@ -37,8 +37,6 @@
 **
 ****************************************************************************/
 
-#include "qqnxglobal.h"
-
 #include "qqnxscreeneventthread.h"
 #include "qqnxscreeneventhandler.h"
 
@@ -48,6 +46,7 @@
 #include <unistd.h>
 
 #include <cctype>
+#include <QGuiApplication>
 
 #if defined(QQNXSCREENEVENTTHREAD_DEBUG)
 #define qScreenEventThreadDebug qDebug
@@ -55,9 +54,8 @@
 #define qScreenEventThreadDebug QT_NO_QDEBUG_MACRO
 #endif
 
-QQnxScreenEventThread::QQnxScreenEventThread(screen_context_t context, QQnxScreenEventHandler *screenEventHandler)
+QQnxScreenEventThread::QQnxScreenEventThread(QQnxScreenEventHandler *screenEventHandler)
     : QThread(),
-      m_screenContext(context),
       m_screenEventHandler(screenEventHandler),
       m_quit(false)
 {
@@ -70,11 +68,6 @@ QQnxScreenEventThread::~QQnxScreenEventThread()
 {
     // block until thread terminates
     shutdown();
-}
-
-void QQnxScreenEventThread::injectKeyboardEvent(int flags, int sym, int mod, int scan, int cap)
-{
-    QQnxScreenEventHandler::injectKeyboardEvent(flags, sym, mod, scan, cap);
 }
 
 QQnxScreenEventArray *QQnxScreenEventThread::lock()
@@ -93,43 +86,22 @@ void QQnxScreenEventThread::run()
     qScreenEventThreadDebug("screen event thread started");
 
     int errorCounter = 0;
+    SDL_Event sdl_event;
+
     // loop indefinitely
     while (!m_quit) {
-        screen_event_t event;
-
-        // create screen event
-        Q_SCREEN_CHECKERROR(screen_create_event(&event), "Failed to create screen event");
-
-        // block until screen event is available
-        const int error = screen_get_event(m_screenContext, event, -1);
-        Q_SCREEN_CRITICALERROR(error, "Failed to get screen event");
-        // Only allow 50 consecutive errors before we exit the thread
-        if (error) {
-            errorCounter++;
-            if (errorCounter > 50)
-                m_quit = true;
-
-            screen_destroy_event(event);
-            continue;
-        } else {
-            errorCounter = 0;
-        }
-
-        // process received event
-        // get the event type
-        int qnxType;
-        Q_SCREEN_CHECKERROR(screen_get_event_property_iv(event, SCREEN_PROPERTY_TYPE, &qnxType),
-                            "Failed to query screen event type");
-
-        if (qnxType == SCREEN_EVENT_USER) {
-            // treat all user events as shutdown requests
-            qScreenEventThreadDebug("QNX user screen event");
-            m_quit = true;
-        } else {
-            m_mutex.lock();
-            m_events << event;
-            m_mutex.unlock();
-            emit eventPending();
+        SDL_Delay(10);
+        while (SDL_PollEvent(&sdl_event)) {
+            if (sdl_event.type == SDL_QUIT) {
+                      qScreenEventThreadDebug() << Q_FUNC_INFO << "QNX user screen event";
+                      m_quit = true;
+            }
+            else {
+                m_mutex.lock();
+                m_events << sdl_event;
+                m_mutex.unlock();
+                emit eventPending();
+            }
         }
     }
 
@@ -137,35 +109,16 @@ void QQnxScreenEventThread::run()
 
     // cleanup
     m_mutex.lock();
-    Q_FOREACH (screen_event_t event, m_events) {
-        screen_destroy_event(event);
-    }
     m_events.clear();
     m_mutex.unlock();
+
+    foreach (QWindow *w, QGuiApplication::topLevelWindows())
+        QWindowSystemInterface::handleCloseEvent(w);
+    QGuiApplication::quit();
 }
 
 void QQnxScreenEventThread::shutdown()
 {
-    screen_event_t event;
-
-    // create screen event
-    Q_SCREEN_CHECKERROR(screen_create_event(&event),
-                        "Failed to create screen event");
-
-    // set the event type as user
-    int type = SCREEN_EVENT_USER;
-    Q_SCREEN_CHECKERROR(screen_set_event_property_iv(event, SCREEN_PROPERTY_TYPE, &type),
-                        "Failed to set screen type");
-
-    // NOTE: ignore SCREEN_PROPERTY_USER_DATA; treat all user events as shutdown events
-
-    // post event to event loop so it will wake up and die
-    Q_SCREEN_CHECKERROR(screen_send_event(m_screenContext, event, getpid()),
-                        "Failed to set screen event type");
-
-    // cleanup
-    screen_destroy_event(event);
-
     qScreenEventThreadDebug("screen event thread shutdown begin");
 
     // block until thread terminates

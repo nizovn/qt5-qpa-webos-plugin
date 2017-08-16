@@ -46,14 +46,13 @@
 
 QT_BEGIN_NAMESPACE
 
-class QQnxAbstractVirtualKeyboard;
-class QQnxIntegration;
+class QEglFSIntegration;
 
 class QQnxInputContext : public QPlatformInputContext
 {
     Q_OBJECT
 public:
-    explicit QQnxInputContext(QQnxIntegration *integration, QQnxAbstractVirtualKeyboard &keyboard);
+    explicit QQnxInputContext(QEglFSIntegration *integration);
     ~QQnxInputContext();
 
     bool isValid() const override;
@@ -67,21 +66,17 @@ public:
     void hideInputPanel() override;
     bool isInputPanelVisible() const override;
 
-    QLocale locale() const override;
     void setFocusObject(QObject *object) override;
 
 private Q_SLOTS:
     void keyboardHeightChanged();
     void keyboardVisibilityChanged(bool visible);
-    void keyboardLocaleChanged(const QLocale &locale);
 
 private:
     bool hasPhysicalKeyboard();
 
     bool m_inputPanelVisible;
-    QLocale m_inputPanelLocale;
-    QQnxIntegration *m_integration;
-    QQnxAbstractVirtualKeyboard &m_virtualKeyboard;
+    QEglFSIntegration *m_integration;
 };
 
 QT_END_NAMESPACE

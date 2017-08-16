@@ -1,8 +1,6 @@
-TARGET = qeglfs
+TARGET = qwebos
 
 QT += eglfsdeviceintegration-private
-
-CONFIG += egl
 
 # Avoid X11 header collision, use generic EGL native types
 DEFINES += QT_EGL_NO_X11

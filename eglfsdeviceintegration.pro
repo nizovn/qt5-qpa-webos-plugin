@@ -12,7 +12,7 @@ QT += \
     core-private gui-private \
     devicediscovery_support-private eventdispatcher_support-private \
     service_support-private theme_support-private fontdatabase_support-private \
-    fb_support-private egl_support-private
+    fb_support-private
 
 qtHaveModule(input_support-private): \
     QT += input_support-private
@@ -28,6 +28,7 @@ DEFINES += QT_BUILD_EGL_DEVICE_LIB
 include($$PWD/api/api.pri)
 
 QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
+LIBS += -lSDL -lpdl
 
 !isEmpty(EGLFS_PLATFORM_HOOKS_SOURCES) {
     HEADERS += $$EGLFS_PLATFORM_HOOKS_HEADERS
@@ -39,8 +40,6 @@ QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
 !isEmpty(EGLFS_DEVICE_INTEGRATION) {
     DEFINES += EGLFS_PREFERRED_PLUGIN=$$EGLFS_DEVICE_INTEGRATION
 }
-
-CONFIG += egl
 
 # Prevent gold linker from crashing.
 # This started happening when QtPlatformSupport was modularized.

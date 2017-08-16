@@ -52,24 +52,27 @@
 //
 
 #include "qeglfsglobal_p.h"
-#include <QtEglSupport/private/qeglplatformcontext_p.h>
 #include <QtCore/QVariant>
+
+#include <qpa/qplatformopenglcontext.h>
 
 QT_BEGIN_NAMESPACE
 
-class Q_EGLFS_EXPORT QEglFSContext : public QEGLPlatformContext
+class Q_EGLFS_EXPORT QEglFSContext : public QPlatformOpenGLContext
 {
 public:
-    QEglFSContext(const QSurfaceFormat &format, QPlatformOpenGLContext *share, EGLDisplay display,
-                  EGLConfig *config, const QVariant &nativeHandle);
-    EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface *surface) override;
-    EGLSurface createTemporaryOffscreenSurface() override;
-    void destroyTemporaryOffscreenSurface(EGLSurface surface) override;
-    void runGLChecks() override;
+    QEglFSContext(QOpenGLContext *context);
+    ~QEglFSContext();
+
+    bool makeCurrent(QPlatformSurface *surface) override;
+    void doneCurrent() override;
     void swapBuffers(QPlatformSurface *surface) override;
+    QFunctionPointer getProcAddress(const char *procName) override;
+
+    QSurfaceFormat format() const override;
 
 private:
-    EGLNativeWindowType m_tempWindow;
+    QSurfaceFormat d_format;
 };
 
 QT_END_NAMESPACE

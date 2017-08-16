@@ -46,7 +46,6 @@
 # include <QtGui/QOpenGLContext>
 # include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
 #endif
-#include <QtEglSupport/private/qeglconvenience_p.h>
 
 #include "qeglfswindow_p.h"
 #ifndef QT_NO_OPENGL
@@ -64,8 +63,7 @@ QEglFSWindow::QEglFSWindow(QWindow *w)
 #endif
       m_raster(false),
       m_winId(0),
-      m_surface(EGL_NO_SURFACE),
-      m_window(0),
+      m_surface(NULL),
       m_flags(0)
 {
 }
@@ -115,7 +113,7 @@ void QEglFSWindow::create()
     QEglFSScreen *screen = this->screen();
 #ifndef QT_NO_OPENGL
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
-    if (screen->primarySurface() != EGL_NO_SURFACE) {
+    if (screen->primarySurface() != NULL) {
         if (Q_UNLIKELY(!isRaster() || !compositor->targetWindow())) {
 #if !defined(Q_OS_ANDROID)
             // We can have either a single OpenGL window or multiple raster windows.
@@ -133,12 +131,6 @@ void QEglFSWindow::create()
     setGeometry(QRect()); // will become fullscreen
 
     resetSurface();
-
-    if (Q_UNLIKELY(m_surface == EGL_NO_SURFACE)) {
-        EGLint error = eglGetError();
-        eglTerminate(screen->display());
-        qFatal("EGL Error : Could not create the egl surface: error = 0x%x\n", error);
-    }
 
     screen->setPrimarySurface(m_surface);
 
@@ -174,7 +166,7 @@ void QEglFSWindow::destroy()
             cursor->resetResources();
 #endif
         if (screen->primarySurface() == m_surface)
-            screen->setPrimarySurface(EGL_NO_SURFACE);
+            screen->setPrimarySurface(NULL);
 
         invalidateSurface();
     }
@@ -187,24 +179,12 @@ void QEglFSWindow::destroy()
 
 void QEglFSWindow::invalidateSurface()
 {
-    if (m_surface != EGL_NO_SURFACE) {
-        eglDestroySurface(screen()->display(), m_surface);
-        m_surface = EGL_NO_SURFACE;
-    }
-    qt_egl_device_integration()->destroyNativeWindow(m_window);
-    m_window = 0;
 }
 
 void QEglFSWindow::resetSurface()
 {
-    EGLDisplay display = screen()->display();
-    QSurfaceFormat platformFormat = qt_egl_device_integration()->surfaceFormatFor(window()->requestedFormat());
-
-    m_config = QEglFSDeviceIntegration::chooseConfig(display, platformFormat);
-    m_format = q_glFormatFromConfig(display, m_config, platformFormat);
-    const QSize surfaceSize = screen()->rawGeometry().size();
-    m_window = qt_egl_device_integration()->createNativeWindow(this, surfaceSize, m_format);
-    m_surface = eglCreateWindowSurface(display, m_config, m_window, NULL);
+    m_format = window()->requestedFormat();
+    m_surface = (void *) 1;
 }
 
 void QEglFSWindow::setVisible(bool visible)
@@ -258,7 +238,7 @@ QRect QEglFSWindow::geometry() const
     // For yet-to-become-fullscreen windows report the geometry covering the entire
     // screen. This is particularly important for Quick where the root object may get
     // sized to some geometry queried before calling create().
-    if (!m_flags.testFlag(Created) && screen()->primarySurface() == EGL_NO_SURFACE)
+    if (!m_flags.testFlag(Created) && screen()->primarySurface() == NULL)
         return screen()->availableGeometry();
 
     return QPlatformWindow::geometry();
@@ -302,19 +282,9 @@ void QEglFSWindow::lower()
 #endif
 }
 
-EGLSurface QEglFSWindow::surface() const
-{
-    return m_surface != EGL_NO_SURFACE ? m_surface : screen()->primarySurface();
-}
-
 QSurfaceFormat QEglFSWindow::format() const
 {
     return m_format;
-}
-
-EGLNativeWindowType QEglFSWindow::eglWindow() const
-{
-    return m_window;
 }
 
 QEglFSScreen *QEglFSWindow::screen() const

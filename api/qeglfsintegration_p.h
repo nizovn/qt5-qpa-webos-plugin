@@ -64,6 +64,10 @@ class QEglFSContext;
 class QFbVtHandler;
 class QEvdevKeyboardManager;
 
+#include "qqnxscreeneventthread.h"
+#include "qqnxscreeneventhandler.h"
+#include "qqnxinputcontext_noimf.h"
+
 class Q_EGLFS_EXPORT QEglFSIntegration : public QPlatformIntegration, public QPlatformNativeInterface
 {
 public:
@@ -71,8 +75,6 @@ public:
 
     void initialize() override;
     void destroy() override;
-
-    EGLDisplay display() const { return m_display; }
 
     QAbstractEventDispatcher *createEventDispatcher() const override;
     QPlatformFontDatabase *fontDatabase() const override;
@@ -94,9 +96,7 @@ public:
     void *nativeResourceForIntegration(const QByteArray &resource) override;
     void *nativeResourceForScreen(const QByteArray &resource, QScreen *screen) override;
     void *nativeResourceForWindow(const QByteArray &resource, QWindow *window) override;
-#ifndef QT_NO_OPENGL
     void *nativeResourceForContext(const QByteArray &resource, QOpenGLContext *context) override;
-#endif
     NativeResourceForContextFunction nativeResourceFunctionForContext(const QByteArray &resource) override;
 
     QFunctionPointer platformFunction(const QByteArray &function) const override;
@@ -107,12 +107,12 @@ public:
     void removeScreen(QPlatformScreen *screen);
 
 private:
-    EGLNativeDisplayType nativeDisplay() const;
     void createInputHandlers();
     static void loadKeymapStatic(const QString &filename);
 
-    EGLDisplay m_display;
     QPlatformInputContext *m_inputContext;
+    QQnxScreenEventHandler *m_screenEventHandler;
+    QQnxScreenEventThread *m_screenEventThread;
     QScopedPointer<QPlatformFontDatabase> m_fontDb;
     QScopedPointer<QPlatformServices> m_services;
     QScopedPointer<QFbVtHandler> m_vtHandler;

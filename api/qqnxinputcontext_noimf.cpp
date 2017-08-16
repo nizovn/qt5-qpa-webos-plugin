@@ -38,13 +38,13 @@
 ****************************************************************************/
 
 #include "qqnxinputcontext_noimf.h"
-#include "qqnxabstractvirtualkeyboard.h"
-#include "qqnxintegration.h"
-#include "qqnxscreen.h"
+#include "qeglfsintegration_p.h"
 
 #include <QtCore/QDebug>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QInputMethodEvent>
+
+#include <PDL.h>
 
 #if defined(QQNXINPUTCONTEXT_DEBUG)
 #define qInputContextDebug qDebug
@@ -54,18 +54,12 @@
 
 QT_BEGIN_NAMESPACE
 
-QQnxInputContext::QQnxInputContext(QQnxIntegration *integration, QQnxAbstractVirtualKeyboard &keyboard) :
+QQnxInputContext::QQnxInputContext(QEglFSIntegration *integration) :
     QPlatformInputContext(),
     m_inputPanelVisible(false),
-    m_inputPanelLocale(QLocale::c()),
-    m_integration(integration),
-    m_virtualKeyboard(keyboard)
+    m_integration(integration)
 {
-    connect(&keyboard, SIGNAL(heightChanged(int)), this, SLOT(keyboardHeightChanged()));
-    connect(&keyboard, SIGNAL(visibilityChanged(bool)), this, SLOT(keyboardVisibilityChanged(bool)));
-    connect(&keyboard, SIGNAL(localeChanged(QLocale)), this, SLOT(keyboardLocaleChanged(QLocale)));
-    keyboardVisibilityChanged(keyboard.isVisible());
-    keyboardLocaleChanged(keyboard.locale());
+    keyboardVisibilityChanged(false);
 }
 
 QQnxInputContext::~QQnxInputContext()
@@ -93,13 +87,13 @@ bool QQnxInputContext::filterEvent( const QEvent *event )
         return false;
 
     if (event->type() == QEvent::CloseSoftwareInputPanel) {
-        m_virtualKeyboard.hideKeyboard();
+        hideInputPanel();
         qInputContextDebug("hiding virtual keyboard");
         return false;
     }
 
     if (event->type() == QEvent::RequestSoftwareInputPanel) {
-        m_virtualKeyboard.showKeyboard();
+        showInputPanel();
         qInputContextDebug("requesting virtual keyboard");
         return false;
     }
@@ -110,9 +104,9 @@ bool QQnxInputContext::filterEvent( const QEvent *event )
 
 QRectF QQnxInputContext::keyboardRect() const
 {
-    QRect screenGeometry = m_integration->primaryDisplay()->geometry();
-    return QRectF(screenGeometry.x(), screenGeometry.height() - m_virtualKeyboard.height(),
-                  screenGeometry.width(), m_virtualKeyboard.height());
+    QRect screenGeometry = QGuiApplication::primaryScreen()->geometry();
+    return QRectF(screenGeometry.x(), screenGeometry.height() - 100,
+                  screenGeometry.width(), 100);
 }
 
 bool QQnxInputContext::handleKeyboardEvent(int flags, int sym, int mod, int scan, int cap)
@@ -128,23 +122,24 @@ bool QQnxInputContext::handleKeyboardEvent(int flags, int sym, int mod, int scan
 void QQnxInputContext::showInputPanel()
 {
     qInputContextDebug();
-    m_virtualKeyboard.showKeyboard();
+    if (!m_inputPanelVisible) {
+        PDL_SetKeyboardState(PDL_TRUE);
+        m_inputPanelVisible = true;
+    }
 }
 
 void QQnxInputContext::hideInputPanel()
 {
     qInputContextDebug();
-    m_virtualKeyboard.hideKeyboard();
+    if (m_inputPanelVisible) {
+        PDL_SetKeyboardState(PDL_FALSE);
+        m_inputPanelVisible = false;
+    }
 }
 
 bool QQnxInputContext::isInputPanelVisible() const
 {
     return m_inputPanelVisible;
-}
-
-QLocale QQnxInputContext::locale() const
-{
-    return m_inputPanelLocale;
 }
 
 void QQnxInputContext::keyboardHeightChanged()
@@ -161,15 +156,6 @@ void QQnxInputContext::keyboardVisibilityChanged(bool visible)
     }
 }
 
-void QQnxInputContext::keyboardLocaleChanged(const QLocale &locale)
-{
-    qInputContextDebug() << "locale=" << locale;
-    if (m_inputPanelLocale != locale) {
-        m_inputPanelLocale = locale;
-        emitLocaleChanged();
-    }
-}
-
 void QQnxInputContext::setFocusObject(QObject *object)
 {
     qInputContextDebug() << "input item=" << object;
@@ -178,16 +164,6 @@ void QQnxInputContext::setFocusObject(QObject *object)
         if (m_inputPanelVisible)
             hideInputPanel();
     } else {
-        QInputMethodQueryEvent query(Qt::ImHints | Qt::ImEnterKeyType);
-        QCoreApplication::sendEvent(object, &query);
-        int inputHints = query.value(Qt::ImHints).toInt();
-        Qt::EnterKeyType qtEnterKeyType = Qt::EnterKeyType(query.value(Qt::ImEnterKeyType).toInt());
-
-        m_virtualKeyboard.setInputHints(inputHints);
-        m_virtualKeyboard.setEnterKeyType(
-            QQnxAbstractVirtualKeyboard::qtEnterKeyTypeToQnx(qtEnterKeyType)
-        );
-
         if (!m_inputPanelVisible)
             showInputPanel();
     }

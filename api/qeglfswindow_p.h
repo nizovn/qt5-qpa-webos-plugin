@@ -93,8 +93,6 @@ public:
 
     QSurfaceFormat format() const override;
 
-    EGLNativeWindowType eglWindow() const;
-    EGLSurface surface() const;
     QEglFSScreen *screen() const;
 
     bool hasNativeWindow() const { return m_flags.testFlag(HasNativeWindow); }
@@ -120,10 +118,8 @@ protected:
     bool m_raster;
     WId m_winId;
 
-    EGLSurface m_surface;
-    EGLNativeWindowType m_window;
+    void *m_surface;
 
-    EGLConfig m_config;
     QSurfaceFormat m_format;
 
     enum Flag {

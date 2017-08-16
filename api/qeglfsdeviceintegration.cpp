@@ -46,7 +46,6 @@
 #include "qeglfsscreen_p.h"
 #include "qeglfshooks_p.h"
 
-#include <QtEglSupport/private/qeglconvenience_p.h>
 #include <QGuiApplication>
 #include <private/qguiapplication_p.h>
 #include <QScreen>
@@ -64,7 +63,177 @@
 #include <private/qfactoryloader_p.h>
 #include <private/qcore_unix_p.h>
 
+#include <private/qmath_p.h>
+
 QT_BEGIN_NAMESPACE
+
+#ifdef Q_OS_UNIX
+QSizeF q_physicalScreenSizeFromFb(int framebufferDevice, const QSize &screenSize = QSize());
+QSize q_screenSizeFromFb(int framebufferDevice);
+int q_screenDepthFromFb(int framebufferDevice);
+qreal q_refreshRateFromFb(int framebufferDevice);
+#endif
+
+#ifdef Q_OS_UNIX
+
+QSizeF q_physicalScreenSizeFromFb(int framebufferDevice, const QSize &screenSize)
+{
+#ifndef Q_OS_LINUX
+    Q_UNUSED(framebufferDevice)
+#endif
+    const int defaultPhysicalDpi = 100;
+    static QSizeF size;
+
+    if (size.isEmpty()) {
+        // Note: in millimeters
+        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_HEIGHT");
+
+        if (width && height) {
+            size.setWidth(width);
+            size.setHeight(height);
+            return size;
+        }
+
+        int w = -1;
+        int h = -1;
+        QSize screenResolution;
+#ifdef Q_OS_LINUX
+        struct fb_var_screeninfo vinfo;
+
+        if (framebufferDevice != -1) {
+            if (ioctl(framebufferDevice, FBIOGET_VSCREENINFO, &vinfo) == -1) {
+                qWarning("eglconvenience: Could not query screen info");
+            } else {
+                w = vinfo.width;
+                h = vinfo.height;
+                screenResolution = QSize(vinfo.xres, vinfo.yres);
+            }
+        } else
+#endif
+        {
+            // Use the provided screen size, when available, since some platforms may have their own
+            // specific way to query it. Otherwise try querying it from the framebuffer.
+            screenResolution = screenSize.isEmpty() ? q_screenSizeFromFb(framebufferDevice) : screenSize;
+        }
+
+        size.setWidth(w <= 0 ? screenResolution.width() * Q_MM_PER_INCH / defaultPhysicalDpi : qreal(w));
+        size.setHeight(h <= 0 ? screenResolution.height() * Q_MM_PER_INCH / defaultPhysicalDpi : qreal(h));
+
+        if (w <= 0 || h <= 0)
+            qWarning("Unable to query physical screen size, defaulting to %d dpi.\n"
+                     "To override, set QT_QPA_EGLFS_PHYSICAL_WIDTH "
+                     "and QT_QPA_EGLFS_PHYSICAL_HEIGHT (in millimeters).", defaultPhysicalDpi);
+    }
+
+    return size;
+}
+
+QSize q_screenSizeFromFb(int framebufferDevice)
+{
+#ifndef Q_OS_LINUX
+    Q_UNUSED(framebufferDevice)
+#endif
+    const int defaultWidth = 800;
+    const int defaultHeight = 600;
+    static QSize size;
+
+    if (size.isEmpty()) {
+        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_HEIGHT");
+
+        if (width && height) {
+            size.setWidth(width);
+            size.setHeight(height);
+            return size;
+        }
+
+#ifdef Q_OS_LINUX
+        struct fb_var_screeninfo vinfo;
+        int xres = -1;
+        int yres = -1;
+
+        if (framebufferDevice != -1) {
+            if (ioctl(framebufferDevice, FBIOGET_VSCREENINFO, &vinfo) == -1) {
+                qWarning("eglconvenience: Could not read screen info");
+            } else {
+                xres = vinfo.xres;
+                yres = vinfo.yres;
+            }
+        }
+
+        size.setWidth(xres <= 0 ? defaultWidth : xres);
+        size.setHeight(yres <= 0 ? defaultHeight : yres);
+#else
+        size.setWidth(defaultWidth);
+        size.setHeight(defaultHeight);
+#endif
+    }
+
+    return size;
+}
+
+int q_screenDepthFromFb(int framebufferDevice)
+{
+#ifndef Q_OS_LINUX
+    Q_UNUSED(framebufferDevice)
+#endif
+    const int defaultDepth = 32;
+    static int depth = qEnvironmentVariableIntValue("QT_QPA_EGLFS_DEPTH");
+
+    if (depth == 0) {
+#ifdef Q_OS_LINUX
+        struct fb_var_screeninfo vinfo;
+
+        if (framebufferDevice != -1) {
+            if (ioctl(framebufferDevice, FBIOGET_VSCREENINFO, &vinfo) == -1)
+                qWarning("eglconvenience: Could not query screen info");
+            else
+                depth = vinfo.bits_per_pixel;
+        }
+
+        if (depth <= 0)
+            depth = defaultDepth;
+#else
+        depth = defaultDepth;
+#endif
+    }
+
+    return depth;
+}
+
+qreal q_refreshRateFromFb(int framebufferDevice)
+{
+#ifndef Q_OS_LINUX
+    Q_UNUSED(framebufferDevice)
+#endif
+
+    static qreal rate = 0;
+
+#ifdef Q_OS_LINUX
+    if (rate == 0) {
+        if (framebufferDevice != -1) {
+            struct fb_var_screeninfo vinfo;
+            if (ioctl(framebufferDevice, FBIOGET_VSCREENINFO, &vinfo) != -1) {
+                const quint64 quot = quint64(vinfo.left_margin + vinfo.right_margin + vinfo.xres + vinfo.hsync_len)
+                    * quint64(vinfo.upper_margin + vinfo.lower_margin + vinfo.yres + vinfo.vsync_len)
+                    * vinfo.pixclock;
+                if (quot)
+                    rate = 1000000000000LLU / quot;
+            } else {
+                qWarning("eglconvenience: Could not query screen info");
+            }
+        }
+    }
+#endif
+
+    if (rate == 0)
+        rate = 60;
+
+    return rate;
+}
+
+#endif // Q_OS_UNIX
 
 Q_LOGGING_CATEGORY(qLcEglDevDebug, "qt.qpa.egldeviceintegration")
 
@@ -175,16 +344,6 @@ void QEglFSDeviceIntegration::platformDestroy()
 #endif
 }
 
-EGLNativeDisplayType QEglFSDeviceIntegration::platformDisplay() const
-{
-    return EGL_DEFAULT_DISPLAY;
-}
-
-EGLDisplay QEglFSDeviceIntegration::createDisplay(EGLNativeDisplayType nativeDisplay)
-{
-    return eglGetDisplay(nativeDisplay);
-}
-
 bool QEglFSDeviceIntegration::usesDefaultScreen()
 {
     return true;
@@ -256,11 +415,6 @@ qreal QEglFSDeviceIntegration::refreshRate() const
     return q_refreshRateFromFb(framebuffer);
 }
 
-EGLint QEglFSDeviceIntegration::surfaceType() const
-{
-    return EGL_WINDOW_BIT;
-}
-
 QSurfaceFormat QEglFSDeviceIntegration::surfaceFormatFor(const QSurfaceFormat &inputFormat) const
 {
     QSurfaceFormat format = inputFormat;
@@ -275,35 +429,9 @@ QSurfaceFormat QEglFSDeviceIntegration::surfaceFormatFor(const QSurfaceFormat &i
     return format;
 }
 
-bool QEglFSDeviceIntegration::filterConfig(EGLDisplay, EGLConfig) const
-{
-    return true;
-}
-
 QEglFSWindow *QEglFSDeviceIntegration::createWindow(QWindow *window) const
 {
     return new QEglFSWindow(window);
-}
-
-EGLNativeWindowType QEglFSDeviceIntegration::createNativeWindow(QPlatformWindow *platformWindow,
-                                                    const QSize &size,
-                                                    const QSurfaceFormat &format)
-{
-    Q_UNUSED(platformWindow);
-    Q_UNUSED(size);
-    Q_UNUSED(format);
-    return 0;
-}
-
-EGLNativeWindowType QEglFSDeviceIntegration::createNativeOffscreenWindow(const QSurfaceFormat &format)
-{
-    Q_UNUSED(format);
-    return 0;
-}
-
-void QEglFSDeviceIntegration::destroyNativeWindow(EGLNativeWindowType window)
-{
-    Q_UNUSED(window);
 }
 
 bool QEglFSDeviceIntegration::hasCapability(QPlatformIntegration::Capability cap) const
@@ -354,24 +482,6 @@ bool QEglFSDeviceIntegration::supportsSurfacelessContexts() const
 void *QEglFSDeviceIntegration::wlDisplay() const
 {
     return Q_NULLPTR;
-}
-
-EGLConfig QEglFSDeviceIntegration::chooseConfig(EGLDisplay display, const QSurfaceFormat &format)
-{
-    class Chooser : public QEglConfigChooser {
-    public:
-        Chooser(EGLDisplay display)
-            : QEglConfigChooser(display) { }
-        bool filterConfig(EGLConfig config) const override {
-            return qt_egl_device_integration()->filterConfig(display(), config)
-                    && QEglConfigChooser::filterConfig(config);
-        }
-    };
-
-    Chooser chooser(display);
-    chooser.setSurfaceType(qt_egl_device_integration()->surfaceType());
-    chooser.setSurfaceFormat(format);
-    return chooser.chooseConfig();
 }
 
 QT_END_NAMESPACE

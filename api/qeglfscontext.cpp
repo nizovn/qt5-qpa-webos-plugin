@@ -39,81 +39,56 @@
 
 #include "qeglfsglobal_p.h"
 #include <QtGui/QSurface>
-#include <QtEglSupport/private/qeglconvenience_p.h>
-#include <QtEglSupport/private/qeglpbuffer_p.h>
 
 #include "qeglfscontext_p.h"
 #include "qeglfswindow_p.h"
 #include "qeglfshooks_p.h"
 #include "qeglfscursor_p.h"
 
+#include <SDL.h>
+
 QT_BEGIN_NAMESPACE
 
-QEglFSContext::QEglFSContext(const QSurfaceFormat &format, QPlatformOpenGLContext *share, EGLDisplay display,
-                             EGLConfig *config, const QVariant &nativeHandle)
-    : QEGLPlatformContext(format, share, display, config, nativeHandle,
-                          qt_egl_device_integration()->supportsSurfacelessContexts() ? Flags(0) : QEGLPlatformContext::NoSurfaceless),
-      m_tempWindow(0)
+QEglFSContext::QEglFSContext(QOpenGLContext *context)
+    :  QPlatformOpenGLContext()
 {
-}
+    d_format = context->format();
 
-EGLSurface QEglFSContext::eglSurfaceForPlatformSurface(QPlatformSurface *surface)
-{
-    if (surface->surface()->surfaceClass() == QSurface::Window)
-        return static_cast<QEglFSWindow *>(surface)->surface();
-    else
-        return static_cast<QEGLPbuffer *>(surface)->pbuffer();
-}
+    if (d_format.renderableType() == QSurfaceFormat::DefaultRenderableType)
+        d_format.setRenderableType(QSurfaceFormat::OpenGLES);
 
-EGLSurface QEglFSContext::createTemporaryOffscreenSurface()
-{
-    if (qt_egl_device_integration()->supportsPBuffers())
-        return QEGLPlatformContext::createTemporaryOffscreenSurface();
-
-    if (!m_tempWindow) {
-        m_tempWindow = qt_egl_device_integration()->createNativeOffscreenWindow(format());
-        if (!m_tempWindow) {
-            qWarning("QEglFSContext: Failed to create temporary native window");
-            return EGL_NO_SURFACE;
-        }
-    }
-    EGLConfig config = q_configFromGLFormat(eglDisplay(), format());
-    return eglCreateWindowSurface(eglDisplay(), config, m_tempWindow, 0);
-}
-
-void QEglFSContext::destroyTemporaryOffscreenSurface(EGLSurface surface)
-{
-    if (qt_egl_device_integration()->supportsPBuffers()) {
-        QEGLPlatformContext::destroyTemporaryOffscreenSurface(surface);
-    } else {
-        eglDestroySurface(eglDisplay(), surface);
-        qt_egl_device_integration()->destroyNativeWindow(m_tempWindow);
-        m_tempWindow = 0;
+    if (d_format.renderableType() != QSurfaceFormat::OpenGLES) {
+        return;
     }
 }
 
-void QEglFSContext::runGLChecks()
+QEglFSContext::~QEglFSContext()
 {
-    // Note that even though there is an EGL context current here,
-    // QOpenGLContext and QOpenGLFunctions are not yet usable at this stage.
-    const char *renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
-    // Be nice and warn about a common source of confusion.
-    if (renderer && strstr(renderer, "llvmpipe"))
-        qWarning("Running on a software rasterizer (LLVMpipe), expect limited performance.");
 }
 
-void QEglFSContext::swapBuffers(QPlatformSurface *surface)
+bool QEglFSContext::makeCurrent(QPlatformSurface *surface)
 {
-    // draw the cursor
-    if (surface->surface()->surfaceClass() == QSurface::Window) {
-        QPlatformWindow *window = static_cast<QPlatformWindow *>(surface);
-        if (QEglFSCursor *cursor = qobject_cast<QEglFSCursor *>(window->screen()->cursor()))
-            cursor->paintOnScreen();
-    }
+    return true;
+}
 
-    qt_egl_device_integration()->waitForVSync(surface);
-    QEGLPlatformContext::swapBuffers(surface);
-    qt_egl_device_integration()->presentBuffer(surface);
+void QEglFSContext::doneCurrent()
+{
+}
+
+void QEglFSContext::swapBuffers(QPlatformSurface *)
+{
+    SDL_GL_SwapBuffers();
+}
+
+void (*QEglFSContext::getProcAddress(const char *procName)) ()
+{
+    void (*ptr)() = (void (*)())SDL_GLES_GetProcAddress(procName);
+    return ptr;
+}
+
+QSurfaceFormat QEglFSContext::format() const
+{
+    return d_format;
 }
 
 QT_END_NAMESPACE

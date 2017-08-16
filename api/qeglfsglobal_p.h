@@ -53,8 +53,6 @@
 
 #include <QtCore/qglobal.h>
 
-#include <QtEglSupport/private/qt_egl_p.h>
-
 QT_BEGIN_NAMESPACE
 
 #ifdef QT_BUILD_EGL_DEVICE_LIB

@@ -4,6 +4,9 @@ SOURCES +=  $$PWD/qeglfswindow.cpp \
             $$PWD/qeglfshooks.cpp \
             $$PWD/qeglfsdeviceintegration.cpp \
             $$PWD/qeglfsintegration.cpp \
+            $$PWD/qqnxscreeneventthread.cpp \
+            $$PWD/qqnxscreeneventhandler.cpp \
+            $$PWD/qqnxinputcontext_noimf.cpp \
             $$PWD/qeglfsoffscreenwindow.cpp
 
 HEADERS +=  $$PWD/qeglfswindow_p.h \
@@ -12,6 +15,9 @@ HEADERS +=  $$PWD/qeglfswindow_p.h \
             $$PWD/qeglfsdeviceintegration_p.h \
             $$PWD/qeglfsintegration_p.h \
             $$PWD/qeglfsoffscreenwindow_p.h \
+            $$PWD/qqnxscreeneventthread.h \
+            $$PWD/qqnxscreeneventhandler.h \
+            $$PWD/qqnxinputcontext_noimf.h \
             $$PWD/qeglfsglobal_p.h
 
 qtConfig(opengl) {

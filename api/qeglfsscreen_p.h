@@ -64,7 +64,7 @@ class QOpenGLContext;
 class Q_EGLFS_EXPORT QEglFSScreen : public QPlatformScreen
 {
 public:
-    QEglFSScreen(EGLDisplay display);
+    QEglFSScreen();
     ~QEglFSScreen();
 
     QRect geometry() const override;
@@ -84,18 +84,15 @@ public:
 
     QPixmap grabWindow(WId wid, int x, int y, int width, int height) const override;
 
-    EGLSurface primarySurface() const { return m_surface; }
-
-    EGLDisplay display() const { return m_dpy; }
+    void *primarySurface() const { return m_surface; }
 
     void handleCursorMove(const QPoint &pos);
 
 private:
-    void setPrimarySurface(EGLSurface surface);
+    void setPrimarySurface(void *surface);
 
-    EGLDisplay m_dpy;
     QPointer<QWindow> m_pointerWindow;
-    EGLSurface m_surface;
+    void *m_surface;
     QPlatformCursor *m_cursor;
 
     friend class QEglFSWindow;

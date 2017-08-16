@@ -40,7 +40,6 @@
 #include "qeglfsoffscreenwindow_p.h"
 #include "qeglfshooks_p.h"
 #include <QtGui/QOffscreenSurface>
-#include <QtEglSupport/private/qeglconvenience_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -54,30 +53,15 @@ QT_BEGIN_NAMESPACE
     This class requires the hooks to implement createNativeOffscreenWindow().
 */
 
-QEglFSOffscreenWindow::QEglFSOffscreenWindow(EGLDisplay display, const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface)
+QEglFSOffscreenWindow::QEglFSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface)
     : QPlatformOffscreenSurface(offscreenSurface)
     , m_format(format)
-    , m_display(display)
-    , m_surface(EGL_NO_SURFACE)
-    , m_window(0)
+    , m_surface(NULL)
 {
-    m_window = qt_egl_device_integration()->createNativeOffscreenWindow(format);
-    if (!m_window) {
-        qWarning("QEglFSOffscreenWindow: Failed to create native window");
-        return;
-    }
-    EGLConfig config = q_configFromGLFormat(m_display, m_format);
-    m_surface = eglCreateWindowSurface(m_display, config, m_window, 0);
-    if (m_surface != EGL_NO_SURFACE)
-        m_format = q_glFormatFromConfig(m_display, config);
 }
 
 QEglFSOffscreenWindow::~QEglFSOffscreenWindow()
 {
-    if (m_surface != EGL_NO_SURFACE)
-        eglDestroySurface(m_display, m_surface);
-    if (m_window)
-        qt_egl_device_integration()->destroyNativeWindow(m_window);
 }
 
 QT_END_NAMESPACE
