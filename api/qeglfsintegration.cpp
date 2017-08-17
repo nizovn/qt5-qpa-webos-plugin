@@ -43,10 +43,8 @@
 #include <qpa/qplatformwindow.h>
 #include <QtGui/QSurfaceFormat>
 #include <QtGui/QScreen>
-#ifndef QT_NO_OPENGL
-# include <QtGui/QOpenGLContext>
-# include <QtGui/QOffscreenSurface>
-#endif
+#include <QtGui/QOpenGLContext>
+#include <QtGui/QOffscreenSurface>
 #include <QtGui/QWindow>
 #include <QtCore/QLoggingCategory>
 #include <qpa/qwindowsysteminterface.h>
@@ -61,52 +59,22 @@
 #include <QtServiceSupport/private/qgenericunixservices_p.h>
 #include <QtThemeSupport/private/qgenericunixthemes_p.h>
 #include <QtEventDispatcherSupport/private/qgenericunixeventdispatcher_p.h>
-#include <QtFbSupport/private/qfbvthandler_p.h>
-#ifndef QT_NO_OPENGL
-# include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
-#endif
-
-#if QT_CONFIG(libinput)
-#include <QtInputSupport/private/qlibinputhandler_p.h>
-#endif
-
-#if QT_CONFIG(evdev)
-#include <QtInputSupport/private/qevdevmousemanager_p.h>
-#include <QtInputSupport/private/qevdevkeyboardmanager_p.h>
-#include <QtInputSupport/private/qevdevtouchmanager_p.h>
-#endif
-
-#if QT_CONFIG(tslib)
-#include <QtInputSupport/private/qtslib_p.h>
-#endif
-
-#if QT_CONFIG(integrityhid)
-#include <QtInputSupport/qintegrityhidmanager.h>
-#endif
+#include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
 
 #include <QtPlatformHeaders/qeglfsfunctions.h>
 
 #include <SDL.h>
 #include <PDL.h>
 
-static void initResources()
-{
-}
-
 QT_BEGIN_NAMESPACE
 
 QEglFSIntegration::QEglFSIntegration()
     : m_inputContext(0),
-      m_fontDb(new QGenericUnixFontDatabase),
-      m_services(new QGenericUnixServices),
       m_screenEventHandler(new QQnxScreenEventHandler(this)),
       m_screenEventThread(0),
-      m_kbdMgr(0),
-      m_disableInputHandlers(false)
+      m_fontDb(new QGenericUnixFontDatabase),
+      m_services(new QGenericUnixServices)
 {
-    m_disableInputHandlers = qEnvironmentVariableIntValue("QT_QPA_EGLFS_DISABLE_INPUT");
-
-    initResources();
 }
 
 void QEglFSIntegration::addScreen(QPlatformScreen *screen, bool isPrimary)
@@ -170,15 +138,11 @@ QPlatformTheme *QEglFSIntegration::createPlatformTheme(const QString &name) cons
 
 QPlatformBackingStore *QEglFSIntegration::createPlatformBackingStore(QWindow *window) const
 {
-#ifndef QT_NO_OPENGL
     QOpenGLCompositorBackingStore *bs = new QOpenGLCompositorBackingStore(window);
     if (!window->handle())
         window->create();
     static_cast<QEglFSWindow *>(window->handle())->setBackingStore(bs);
     return bs;
-#else
-    return nullptr;
-#endif
 }
 
 QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
@@ -194,7 +158,6 @@ QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
     return w;
 }
 
-#ifndef QT_NO_OPENGL
 QPlatformOpenGLContext *QEglFSIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
     return new QEglFSContext(context);
@@ -205,21 +168,14 @@ QPlatformOffscreenSurface *QEglFSIntegration::createPlatformOffscreenSurface(QOf
     QSurfaceFormat fmt = surface->requestedFormat();
     return new QEglFSOffscreenWindow(fmt, surface);
 }
-#endif // QT_NO_OPENGL
 
 bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) const
 {
     switch (cap) {
     case ThreadedPixmaps: return false;
-#ifndef QT_NO_OPENGL
     case OpenGL: return true;
     case ThreadedOpenGL: return false;
     case RasterGLSurface: return true;
-#else
-    case OpenGL: return false;
-    case ThreadedOpenGL: return false;
-    case RasterGLSurface: return false;
-#endif
     case WindowManagement: return false;
     default: return QPlatformIntegration::hasCapability(cap);
     }
@@ -232,83 +188,44 @@ QPlatformNativeInterface *QEglFSIntegration::nativeInterface() const
 
 void *QEglFSIntegration::nativeResourceForIntegration(const QByteArray &resource)
 {
+    Q_UNUSED(resource)
     void *result = 0;
     return result;
 }
 
 void *QEglFSIntegration::nativeResourceForScreen(const QByteArray &resource, QScreen *)
 {
+    Q_UNUSED(resource)
     void *result = 0;
     return result;
 }
 
 void *QEglFSIntegration::nativeResourceForWindow(const QByteArray &resource, QWindow *window)
 {
+    Q_UNUSED(resource)
+    Q_UNUSED(window)
     void *result = 0;
     return result;
 }
 
 void *QEglFSIntegration::nativeResourceForContext(const QByteArray &resource, QOpenGLContext *context)
 {
+    Q_UNUSED(resource)
+    Q_UNUSED(context)
+    void *result = 0;
+    return result;
 }
 
 QPlatformNativeInterface::NativeResourceForContextFunction QEglFSIntegration::nativeResourceFunctionForContext(const QByteArray &resource)
 {
+    Q_UNUSED(resource)
     return 0;
 }
 
 QFunctionPointer QEglFSIntegration::platformFunction(const QByteArray &function) const
 {
-#if QT_CONFIG(evdev)
-    if (function == QEglFSFunctions::loadKeymapTypeIdentifier())
-        return QFunctionPointer(loadKeymapStatic);
-#else
     Q_UNUSED(function)
-#endif
-
     return 0;
-}
-
-void QEglFSIntegration::loadKeymapStatic(const QString &filename)
-{
-#if QT_CONFIG(evdev)
-    QEglFSIntegration *self = static_cast<QEglFSIntegration *>(QGuiApplicationPrivate::platformIntegration());
-    if (self->m_kbdMgr)
-        self->m_kbdMgr->loadKeymap(filename);
-    else
-        qWarning("QEglFSIntegration: Cannot load keymap, no keyboard handler found");
-#else
-    Q_UNUSED(filename);
-#endif
-}
-
-void QEglFSIntegration::createInputHandlers()
-{
-#if QT_CONFIG(libinput)
-    if (!qEnvironmentVariableIntValue("QT_QPA_EGLFS_NO_LIBINPUT")) {
-        new QLibInputHandler(QLatin1String("libinput"), QString());
-        return;
-    }
-#endif
-
-#if QT_CONFIG(tslib)
-    bool useTslib = qEnvironmentVariableIntValue("QT_QPA_EGLFS_TSLIB");
-    if (useTslib)
-        new QTsLibMouseHandler(QLatin1String("TsLib"), QString() /* spec */);
-#endif
-
-#if QT_CONFIG(evdev)
-    m_kbdMgr = new QEvdevKeyboardManager(QLatin1String("EvdevKeyboard"), QString() /* spec */, this);
-    new QEvdevMouseManager(QLatin1String("EvdevMouse"), QString() /* spec */, this);
-#if QT_CONFIG(tslib)
-    if (!useTslib)
-#endif
-        new QEvdevTouchManager(QLatin1String("EvdevTouch"), QString() /* spec */, this);
-#endif
-
-#if QT_CONFIG(integrityhid)
-   new QIntegrityHIDManager("HID", "", this);
-#endif
 }
 
 QT_END_NAMESPACE

@@ -52,7 +52,6 @@
 //
 
 #include "qeglfsglobal_p.h"
-#include <QtCore/QVariant>
 
 #include <qpa/qplatformopenglcontext.h>
 

@@ -55,11 +55,7 @@
 
 QT_BEGIN_NAMESPACE
 
-#ifdef QT_BUILD_EGL_DEVICE_LIB
 #define Q_EGLFS_EXPORT Q_DECL_EXPORT
-#else
-#define Q_EGLFS_EXPORT Q_DECL_IMPORT
-#endif
 
 #undef Status
 #undef None

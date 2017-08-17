@@ -56,19 +56,13 @@
 #include "qeglfsscreen_p.h"
 
 #include <qpa/qplatformwindow.h>
-#ifndef QT_NO_OPENGL
-# include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
-#endif
+#include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
 
 QT_BEGIN_NAMESPACE
 
 class QOpenGLCompositorBackingStore;
 class QPlatformTextureList;
-#ifndef QT_NO_OPENGL
 class Q_EGLFS_EXPORT QEglFSWindow : public QPlatformWindow, public QOpenGLCompositorWindow
-#else
-class Q_EGLFS_EXPORT QEglFSWindow : public QPlatformWindow
-#endif
 {
 public:
     QEglFSWindow(QWindow *w);
@@ -100,21 +94,15 @@ public:
     void invalidateSurface() override;
     virtual void resetSurface();
 
-#ifndef QT_NO_OPENGL
     QOpenGLCompositorBackingStore *backingStore() { return m_backingStore; }
     void setBackingStore(QOpenGLCompositorBackingStore *backingStore) { m_backingStore = backingStore; }
-#endif
     bool isRaster() const;
-#ifndef QT_NO_OPENGL
     QWindow *sourceWindow() const override;
     const QPlatformTextureList *textures() const override;
     void endCompositing() override;
-#endif
 
 protected:
-#ifndef QT_NO_OPENGL
     QOpenGLCompositorBackingStore *m_backingStore;
-#endif
     bool m_raster;
     WId m_winId;
 

@@ -58,7 +58,6 @@
 #define HP_BT_UP 19
 #define HP_BT_RIGHT 20
 #define HP_BT_DOWN 21
-#define PDLK_GESTURE_DISMISS_KEYBOARD 24
 
 QT_BEGIN_NAMESPACE
 
@@ -246,7 +245,7 @@ void QQnxScreenEventHandler::handleActiveEvent(SDL_Event event)
 int QQnxScreenEventHandler::handleSpecialKeys(SDLKey key, int def)
 {
   // Special-case misc keys
-  switch (key)
+  switch ((int)key)
   {
     case SDLK_TAB:
       return Qt::Key_Tab;

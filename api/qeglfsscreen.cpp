@@ -191,7 +191,6 @@ void QEglFSScreen::setPrimarySurface(void *surface)
 
 QPixmap QEglFSScreen::grabWindow(WId wid, int x, int y, int width, int height) const
 {
-#ifndef QT_NO_OPENGL
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
     const QList<QOpenGLCompositorWindow *> windows = compositor->windows();
     Q_ASSERT(!windows.isEmpty());
@@ -234,7 +233,6 @@ QPixmap QEglFSScreen::grabWindow(WId wid, int x, int y, int width, int height) c
             return QPixmap::fromImage(img).copy(rect);
         }
     }
-#endif // QT_NO_OPENGL
     return QPixmap();
 }
 

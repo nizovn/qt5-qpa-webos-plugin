@@ -2,12 +2,8 @@ TARGET = qwebos
 
 QT += \
     core-private gui-private \
-    devicediscovery_support-private eventdispatcher_support-private \
-    service_support-private theme_support-private fontdatabase_support-private \
-    fb_support-private
-
-qtHaveModule(input_support-private): \
-    QT += input_support-private
+    eventdispatcher_support-private \
+    service_support-private theme_support-private fontdatabase_support-private
 
 qtHaveModule(platformcompositor_support-private): \
     QT += platformcompositor_support-private

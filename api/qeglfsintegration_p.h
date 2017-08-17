@@ -61,8 +61,6 @@ QT_BEGIN_NAMESPACE
 
 class QEglFSWindow;
 class QEglFSContext;
-class QFbVtHandler;
-class QEvdevKeyboardManager;
 
 #include "qqnxscreeneventthread.h"
 #include "qqnxscreeneventhandler.h"
@@ -84,10 +82,8 @@ public:
 
     QPlatformWindow *createPlatformWindow(QWindow *window) const override;
     QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
-#ifndef QT_NO_OPENGL
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
     QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
-#endif
     bool hasCapability(QPlatformIntegration::Capability cap) const override;
 
     QPlatformNativeInterface *nativeInterface() const override;
@@ -101,23 +97,16 @@ public:
 
     QFunctionPointer platformFunction(const QByteArray &function) const override;
 
-    QFbVtHandler *vtHandler() { return m_vtHandler.data(); }
-
     void addScreen(QPlatformScreen *screen, bool isPrimary = false);
     void removeScreen(QPlatformScreen *screen);
 
 private:
-    void createInputHandlers();
-    static void loadKeymapStatic(const QString &filename);
 
     QPlatformInputContext *m_inputContext;
     QQnxScreenEventHandler *m_screenEventHandler;
     QQnxScreenEventThread *m_screenEventThread;
     QScopedPointer<QPlatformFontDatabase> m_fontDb;
     QScopedPointer<QPlatformServices> m_services;
-    QScopedPointer<QFbVtHandler> m_vtHandler;
-    QEvdevKeyboardManager *m_kbdMgr;
-    bool m_disableInputHandlers;
 };
 
 QT_END_NAMESPACE

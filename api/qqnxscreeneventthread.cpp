@@ -85,7 +85,6 @@ void QQnxScreenEventThread::run()
 {
     qScreenEventThreadDebug("screen event thread started");
 
-    int errorCounter = 0;
     SDL_Event sdl_event;
 
     // loop indefinitely

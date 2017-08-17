@@ -64,7 +64,7 @@ QEglFSContext::~QEglFSContext()
 {
 }
 
-bool QEglFSContext::makeCurrent(QPlatformSurface *surface)
+bool QEglFSContext::makeCurrent(QPlatformSurface *)
 {
     return true;
 }
