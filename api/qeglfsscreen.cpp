@@ -41,10 +41,12 @@
 #include <QtGui/qwindow.h>
 #include <qpa/qwindowsysteminterface.h>
 #include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
+#include <private/qmath_p.h>
 
 #include "qeglfsscreen_p.h"
 #include "qeglfswindow_p.h"
-#include "qeglfshooks_p.h"
+
+#include <SDL.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -85,47 +87,101 @@ QRect QEglFSScreen::geometry() const
 
 QRect QEglFSScreen::rawGeometry() const
 {
-    return QRect(QPoint(0, 0), qt_egl_device_integration()->screenSize());
+    const SDL_VideoInfo* info = SDL_GetVideoInfo();
+    const int defaultWidth = info->current_w;
+    const int defaultHeight = info->current_h;
+
+    static QSize size;
+
+    if (size.isEmpty()) {
+        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_HEIGHT");
+
+        if (width && height) {
+            size.setWidth(width);
+            size.setHeight(height);
+        }
+        else {
+            size.setWidth(defaultWidth);
+            size.setHeight(defaultHeight);
+        }
+    }
+    return QRect(QPoint(0, 0), size);
 }
 
 int QEglFSScreen::depth() const
 {
-    return qt_egl_device_integration()->screenDepth();
+    const SDL_VideoInfo* info = SDL_GetVideoInfo();
+    const int defaultDepth = info->vfmt->BitsPerPixel;
+    static int depth = qEnvironmentVariableIntValue("QT_QPA_EGLFS_DEPTH");
+
+    if (depth == 0) {
+        depth = defaultDepth;
+    }
+    return depth;
 }
 
 QImage::Format QEglFSScreen::format() const
 {
-    return qt_egl_device_integration()->screenFormat();
+    return depth() == 16 ? QImage::Format_RGB16 : QImage::Format_RGB32;
 }
 
 QSizeF QEglFSScreen::physicalSize() const
 {
-    return qt_egl_device_integration()->physicalScreenSize();
+    const int defaultPhysicalDpi = 100;
+    static QSizeF size;
+
+    if (size.isEmpty()) {
+        // Note: in millimeters
+        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_HEIGHT");
+
+        if (width && height) {
+            size.setWidth(width);
+            size.setHeight(height);
+        }
+        else {
+            size.setWidth(screen()->size().width() * Q_MM_PER_INCH / defaultPhysicalDpi);
+            size.setHeight(screen()->size().height() * Q_MM_PER_INCH / defaultPhysicalDpi);
+            qWarning("Unable to query physical screen size, defaulting to %d dpi.\n"
+                     "To override, set QT_QPA_EGLFS_PHYSICAL_WIDTH "
+                     "and QT_QPA_EGLFS_PHYSICAL_HEIGHT (in millimeters).", defaultPhysicalDpi);
+        }
+    }
+
+    return size;
 }
 
 QDpi QEglFSScreen::logicalDpi() const
 {
-    return qt_egl_device_integration()->logicalDpi();
+    const QSizeF ps = physicalSize();
+    const QSize s = screen()->size();
+
+    if (!ps.isEmpty() && !s.isEmpty())
+        return QDpi(25.4 * s.width() / ps.width(),
+                    25.4 * s.height() / ps.height());
+    else
+        return QDpi(100, 100);
 }
 
 qreal QEglFSScreen::pixelDensity() const
 {
-    return qt_egl_device_integration()->pixelDensity();
+    return qMax(1, qRound(logicalDpi().first / qreal(100)));
 }
 
 Qt::ScreenOrientation QEglFSScreen::nativeOrientation() const
 {
-    return qt_egl_device_integration()->nativeOrientation();
+    return Qt::PrimaryOrientation;
 }
 
 Qt::ScreenOrientation QEglFSScreen::orientation() const
 {
-    return qt_egl_device_integration()->orientation();
+    return Qt::PrimaryOrientation;
 }
 
 qreal QEglFSScreen::refreshRate() const
 {
-    return qt_egl_device_integration()->refreshRate();
+    return 60;
 }
 
 void QEglFSScreen::setPrimarySurface(void *surface)

@@ -48,8 +48,6 @@
 #endif
 
 #include "qeglfswindow_p.h"
-#include "qeglfshooks_p.h"
-#include "qeglfsdeviceintegration_p.h"
 
 QT_BEGIN_NAMESPACE
 

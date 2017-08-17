@@ -54,8 +54,7 @@
 
 #include "qeglfsintegration_p.h"
 #include "qeglfswindow_p.h"
-#include "qeglfshooks_p.h"
-# include "qeglfscontext_p.h"
+#include "qeglfscontext_p.h"
 #include "qeglfsoffscreenwindow_p.h"
 
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
@@ -122,8 +121,6 @@ void QEglFSIntegration::removeScreen(QPlatformScreen *screen)
 
 void QEglFSIntegration::initialize()
 {
-    qt_egl_device_integration()->platformInit();
-
     PDL_Init(0);
 
     SDL_Init(SDL_INIT_VIDEO);
@@ -144,9 +141,8 @@ void QEglFSIntegration::destroy()
     foreach (QWindow *w, qGuiApp->topLevelWindows())
         w->destroy();
 
-    qt_egl_device_integration()->screenDestroy();
-
-    qt_egl_device_integration()->platformDestroy();
+    while (!qGuiApp->screens().isEmpty())
+        removeScreen(qGuiApp->screens().constLast()->handle());
 
     SDL_Quit();
     PDL_Quit();
@@ -188,7 +184,7 @@ QPlatformBackingStore *QEglFSIntegration::createPlatformBackingStore(QWindow *wi
 QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
 {
     QWindowSystemInterface::flushWindowSystemEvents(QEventLoop::ExcludeUserInputEvents);
-    QEglFSWindow *w = qt_egl_device_integration()->createWindow(window);
+    QEglFSWindow *w = new QEglFSWindow(window);
     w->create();
 
     // Activate only the window for the primary screen to make input work
@@ -206,17 +202,13 @@ QPlatformOpenGLContext *QEglFSIntegration::createPlatformOpenGLContext(QOpenGLCo
 
 QPlatformOffscreenSurface *QEglFSIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
 {
-    QSurfaceFormat fmt = qt_egl_device_integration()->surfaceFormatFor(surface->requestedFormat());
+    QSurfaceFormat fmt = surface->requestedFormat();
     return new QEglFSOffscreenWindow(fmt, surface);
 }
 #endif // QT_NO_OPENGL
 
 bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) const
 {
-    // We assume that devices will have more and not less capabilities
-    if (qt_egl_device_integration()->hasCapability(cap))
-        return true;
-
     switch (cap) {
     case ThreadedPixmaps: return false;
 #ifndef QT_NO_OPENGL

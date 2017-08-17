@@ -42,7 +42,6 @@
 
 #include "qeglfscontext_p.h"
 #include "qeglfswindow_p.h"
-#include "qeglfshooks_p.h"
 
 #include <SDL.h>
 

@@ -38,7 +38,6 @@
 ****************************************************************************/
 
 #include "qeglfsoffscreenwindow_p.h"
-#include "qeglfshooks_p.h"
 #include <QtGui/QOffscreenSurface>
 
 QT_BEGIN_NAMESPACE
