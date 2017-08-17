@@ -39,9 +39,6 @@
 
 #include "qeglfsdeviceintegration_p.h"
 #include "qeglfsintegration_p.h"
-#ifndef QT_NO_OPENGL
-# include "qeglfscursor_p.h"
-#endif
 #include "qeglfswindow_p.h"
 #include "qeglfsscreen_p.h"
 #include "qeglfshooks_p.h"
@@ -438,16 +435,6 @@ bool QEglFSDeviceIntegration::hasCapability(QPlatformIntegration::Capability cap
 {
     Q_UNUSED(cap);
     return false;
-}
-
-QPlatformCursor *QEglFSDeviceIntegration::createCursor(QPlatformScreen *screen) const
-{
-#ifndef QT_NO_OPENGL
-    return new QEglFSCursor(static_cast<QEglFSScreen *>(screen));
-#else
-    Q_UNUSED(screen);
-    return nullptr;
-#endif
 }
 
 void QEglFSDeviceIntegration::waitForVSync(QPlatformSurface *surface) const

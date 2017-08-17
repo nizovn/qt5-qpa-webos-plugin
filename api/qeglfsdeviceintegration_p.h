@@ -87,7 +87,6 @@ public:
     virtual QSurfaceFormat surfaceFormatFor(const QSurfaceFormat &inputFormat) const;
     virtual QEglFSWindow *createWindow(QWindow *window) const;
     virtual bool hasCapability(QPlatformIntegration::Capability cap) const;
-    virtual QPlatformCursor *createCursor(QPlatformScreen *screen) const;
     virtual void waitForVSync(QPlatformSurface *surface) const;
     virtual void presentBuffer(QPlatformSurface *surface);
     virtual QByteArray fbDeviceName() const;

@@ -43,7 +43,6 @@
 #include "qeglfscontext_p.h"
 #include "qeglfswindow_p.h"
 #include "qeglfshooks_p.h"
-#include "qeglfscursor_p.h"
 
 #include <SDL.h>
 

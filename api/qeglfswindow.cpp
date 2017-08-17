@@ -48,9 +48,6 @@
 #endif
 
 #include "qeglfswindow_p.h"
-#ifndef QT_NO_OPENGL
-# include "qeglfscursor_p.h"
-#endif
 #include "qeglfshooks_p.h"
 #include "qeglfsdeviceintegration_p.h"
 
@@ -160,11 +157,6 @@ void QEglFSWindow::destroy()
 {
     QEglFSScreen *screen = this->screen();
     if (m_flags.testFlag(HasNativeWindow)) {
-#ifndef QT_NO_OPENGL
-        QEglFSCursor *cursor = qobject_cast<QEglFSCursor *>(screen->cursor());
-        if (cursor)
-            cursor->resetResources();
-#endif
         if (screen->primarySurface() == m_surface)
             screen->setPrimarySurface(NULL);
 

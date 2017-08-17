@@ -7,6 +7,7 @@ SOURCES +=  $$PWD/qeglfswindow.cpp \
             $$PWD/qqnxscreeneventthread.cpp \
             $$PWD/qqnxscreeneventhandler.cpp \
             $$PWD/qqnxinputcontext_noimf.cpp \
+            $$PWD/qeglfscontext.cpp \
             $$PWD/qeglfsoffscreenwindow.cpp
 
 HEADERS +=  $$PWD/qeglfswindow_p.h \
@@ -18,15 +19,7 @@ HEADERS +=  $$PWD/qeglfswindow_p.h \
             $$PWD/qqnxscreeneventthread.h \
             $$PWD/qqnxscreeneventhandler.h \
             $$PWD/qqnxinputcontext_noimf.h \
+            $$PWD/qeglfscontext_p.h \
             $$PWD/qeglfsglobal_p.h
-
-qtConfig(opengl) {
-    SOURCES += \
-        $$PWD/qeglfscursor.cpp \
-        $$PWD/qeglfscontext.cpp
-    HEADERS += \
-        $$PWD/qeglfscursor_p.h \
-        $$PWD/qeglfscontext_p.h
-}
 
 INCLUDEPATH += $$PWD

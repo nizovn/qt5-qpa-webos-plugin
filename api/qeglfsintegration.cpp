@@ -55,10 +55,7 @@
 #include "qeglfsintegration_p.h"
 #include "qeglfswindow_p.h"
 #include "qeglfshooks_p.h"
-#ifndef QT_NO_OPENGL
 # include "qeglfscontext_p.h"
-# include "qeglfscursor_p.h"
-#endif
 #include "qeglfsoffscreenwindow_p.h"
 
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
@@ -95,9 +92,6 @@
 
 static void initResources()
 {
-#ifndef QT_NO_CURSOR
-    Q_INIT_RESOURCE(cursor);
-#endif
 }
 
 QT_BEGIN_NAMESPACE

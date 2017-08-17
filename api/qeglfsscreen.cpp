@@ -40,10 +40,7 @@
 #include <QtCore/qtextstream.h>
 #include <QtGui/qwindow.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <qpa/qplatformcursor.h>
-#ifndef QT_NO_OPENGL
-# include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
-#endif
+#include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
 
 #include "qeglfsscreen_p.h"
 #include "qeglfswindow_p.h"
@@ -52,18 +49,13 @@
 QT_BEGIN_NAMESPACE
 
 QEglFSScreen::QEglFSScreen()
-    : m_surface(NULL),
-      m_cursor(0)
+    : m_surface(NULL)
 {
-    m_cursor = qt_egl_device_integration()->createCursor(this);
 }
 
 QEglFSScreen::~QEglFSScreen()
 {
-    delete m_cursor;
-#ifndef QT_NO_OPENGL
     QOpenGLCompositor::destroy();
-#endif
 }
 
 QRect QEglFSScreen::geometry() const
@@ -131,11 +123,6 @@ Qt::ScreenOrientation QEglFSScreen::orientation() const
     return qt_egl_device_integration()->orientation();
 }
 
-QPlatformCursor *QEglFSScreen::cursor() const
-{
-    return m_cursor;
-}
-
 qreal QEglFSScreen::refreshRate() const
 {
     return qt_egl_device_integration()->refreshRate();
@@ -144,45 +131,6 @@ qreal QEglFSScreen::refreshRate() const
 void QEglFSScreen::setPrimarySurface(void *surface)
 {
     m_surface = surface;
-}
-
-void QEglFSScreen::handleCursorMove(const QPoint &pos)
-{
-#ifndef QT_NO_OPENGL
-    const QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
-    const QList<QOpenGLCompositorWindow *> windows = compositor->windows();
-
-    // Generate enter and leave events like a real windowing system would do.
-    if (windows.isEmpty())
-        return;
-
-    // First window is always fullscreen.
-    if (windows.count() == 1) {
-        QWindow *window = windows[0]->sourceWindow();
-        if (m_pointerWindow != window) {
-            m_pointerWindow = window;
-            QWindowSystemInterface::handleEnterEvent(window, window->mapFromGlobal(pos), pos);
-        }
-        return;
-    }
-
-    QWindow *enter = 0, *leave = 0;
-    for (int i = windows.count() - 1; i >= 0; --i) {
-        QWindow *window = windows[i]->sourceWindow();
-        const QRect geom = window->geometry();
-        if (geom.contains(pos)) {
-            if (m_pointerWindow != window) {
-                leave = m_pointerWindow;
-                m_pointerWindow = window;
-                enter = window;
-            }
-            break;
-        }
-    }
-
-    if (enter && leave)
-        QWindowSystemInterface::handleEnterLeaveEvent(enter, leave, enter->mapFromGlobal(pos), pos);
-#endif
 }
 
 QPixmap QEglFSScreen::grabWindow(WId wid, int x, int y, int width, int height) const

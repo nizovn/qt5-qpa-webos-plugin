@@ -23,8 +23,6 @@ LIBS += -lSDL -lpdl
 
 OTHER_FILES += $$PWD/eglfs.json
 
-!contains(DEFINES, QT_NO_CURSOR): RESOURCES += $$PWD/cursor.qrc
-
 PLUGIN_TYPE = platforms
 PLUGIN_CLASS_NAME = QEglFSIntegrationPlugin
 !equals(TARGET, $$QT_DEFAULT_QPA_PLUGIN): PLUGIN_EXTENDS = -
