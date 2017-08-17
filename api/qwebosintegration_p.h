@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QEGLFSINTEGRATION_H
-#define QEGLFSINTEGRATION_H
+#ifndef QWEBOSINTEGRATION_H
+#define QWEBOSINTEGRATION_H
 
 //
 //  W A R N I N G
@@ -51,7 +51,7 @@
 // We mean it.
 //
 
-#include "qeglfsglobal_p.h"
+#include "qwebosglobal_p.h"
 #include <QtCore/QVariant>
 #include <qpa/qplatformintegration.h>
 #include <qpa/qplatformnativeinterface.h>
@@ -59,17 +59,17 @@
 
 QT_BEGIN_NAMESPACE
 
-class QEglFSWindow;
-class QEglFSContext;
+class QWebOSWindow;
+class QWebOSGLContext;
 
-#include "qqnxscreeneventthread.h"
-#include "qqnxscreeneventhandler.h"
-#include "qqnxinputcontext_noimf.h"
+#include "qwebosscreeneventthread_p.h"
+#include "qwebosscreeneventhandler_p.h"
+#include "qwebosinputcontext_p.h"
 
-class Q_EGLFS_EXPORT QEglFSIntegration : public QPlatformIntegration, public QPlatformNativeInterface
+class Q_WEBOS_EXPORT QWebOSIntegration : public QPlatformIntegration, public QPlatformNativeInterface
 {
 public:
-    QEglFSIntegration();
+    QWebOSIntegration();
 
     void initialize() override;
     void destroy() override;
@@ -103,12 +103,12 @@ public:
 private:
 
     QPlatformInputContext *m_inputContext;
-    QQnxScreenEventHandler *m_screenEventHandler;
-    QQnxScreenEventThread *m_screenEventThread;
+    QWebOSScreenEventHandler *m_screenEventHandler;
+    QWebOSScreenEventThread *m_screenEventThread;
     QScopedPointer<QPlatformFontDatabase> m_fontDb;
     QScopedPointer<QPlatformServices> m_services;
 };
 
 QT_END_NAMESPACE
 
-#endif // QEGLFSINTEGRATION_H
+#endif // QWEBOSINTEGRATION_H

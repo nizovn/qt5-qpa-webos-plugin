@@ -1,6 +1,6 @@
-/***************************************************************************
+/****************************************************************************
 **
-** Copyright (C) 2011 - 2012 Research In Motion
+** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -37,46 +37,43 @@
 **
 ****************************************************************************/
 
-#ifndef QQNXSCREENEVENTTHREAD_H
-#define QQNXSCREENEVENTTHREAD_H
+#ifndef QWEBOSGLCONTEXT_H
+#define QWEBOSGLCONTEXT_H
 
-#include <QtCore/QThread>
-#include <QtCore/QMutex>
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the Qt API.  It exists purely as an
+// implementation detail.  This header file may change from version to
+// version without notice, or even be removed.
+//
+// We mean it.
+//
 
-#include <SDL.h>
+#include "qwebosglobal_p.h"
+
+#include <qpa/qplatformopenglcontext.h>
 
 QT_BEGIN_NAMESPACE
 
-class QQnxScreenEventHandler;
-
-typedef QVarLengthArray<SDL_Event, 64> QQnxScreenEventArray;
-
-class QQnxScreenEventThread : public QThread
+class Q_WEBOS_EXPORT QWebOSGLContext : public QPlatformOpenGLContext
 {
-    Q_OBJECT
-
 public:
-    QQnxScreenEventThread(QQnxScreenEventHandler *screenEventHandler);
-    ~QQnxScreenEventThread();
+    QWebOSGLContext(QOpenGLContext *context);
+    ~QWebOSGLContext();
 
-    QQnxScreenEventArray *lock();
-    void unlock();
+    bool makeCurrent(QPlatformSurface *surface) override;
+    void doneCurrent() override;
+    void swapBuffers(QPlatformSurface *surface) override;
+    QFunctionPointer getProcAddress(const char *procName) override;
 
-protected:
-    void run() override;
-
-Q_SIGNALS:
-    void eventPending();
+    QSurfaceFormat format() const override;
 
 private:
-    void shutdown();
-
-    QMutex m_mutex;
-    QQnxScreenEventArray m_events;
-    QQnxScreenEventHandler *m_screenEventHandler;
-    bool m_quit;
+    QSurfaceFormat d_format;
 };
 
 QT_END_NAMESPACE
 
-#endif // QQNXSCREENEVENTTHREAD_H
+#endif // QWEBOSGLCONTEXT_H

@@ -1,6 +1,6 @@
-/****************************************************************************
+/***************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2011 - 2012 Research In Motion
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -37,39 +37,48 @@
 **
 ****************************************************************************/
 
-#ifndef QEGLFSOFFSCREENWINDOW_H
-#define QEGLFSOFFSCREENWINDOW_H
+#ifndef QWEBOSINPUTCONTEXT_H
+#define QWEBOSINPUTCONTEXT_H
 
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the Qt API.  It exists purely as an
-// implementation detail.  This header file may change from version to
-// version without notice, or even be removed.
-//
-// We mean it.
-//
-
-#include "qeglfsglobal_p.h"
-#include <qpa/qplatformoffscreensurface.h>
+#include <QtCore/QLocale>
+#include <qpa/qplatforminputcontext.h>
+#include <qpa/qplatformintegration.h>
 
 QT_BEGIN_NAMESPACE
 
-class Q_EGLFS_EXPORT QEglFSOffscreenWindow : public QPlatformOffscreenSurface
-{
-public:
-    QEglFSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface);
-    ~QEglFSOffscreenWindow();
+class QWebOSIntegration;
 
-    QSurfaceFormat format() const override { return m_format; }
-    bool isValid() const override { return m_surface != NULL; }
+class QWebOSInputContext : public QPlatformInputContext
+{
+    Q_OBJECT
+public:
+    explicit QWebOSInputContext(QWebOSIntegration *integration);
+    ~QWebOSInputContext();
+
+    bool isValid() const override;
+
+    void reset() override;
+    bool filterEvent(const QEvent *event) override;
+    QRectF keyboardRect() const override;
+    bool handleKeyboardEvent(int flags, int sym, int mod, int scan, int cap);
+
+    void showInputPanel() override;
+    void hideInputPanel() override;
+    bool isInputPanelVisible() const override;
+
+    void setFocusObject(QObject *object) override;
+
+private Q_SLOTS:
+    void keyboardHeightChanged();
+    void keyboardVisibilityChanged(bool visible);
 
 private:
-    QSurfaceFormat m_format;
-    void *m_surface;
+    bool hasPhysicalKeyboard();
+
+    bool m_inputPanelVisible;
+    QWebOSIntegration *m_integration;
 };
 
 QT_END_NAMESPACE
 
-#endif // QEGLFSOFFSCREENWINDOW_H
+#endif // QWEBOSINPUTCONTEXT_H

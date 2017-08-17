@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QEGLFSGLOBAL_H
-#define QEGLFSGLOBAL_H
+#ifndef QWEBOSOFFSCREENWINDOW_H
+#define QWEBOSOFFSCREENWINDOW_H
 
 //
 //  W A R N I N G
@@ -51,24 +51,25 @@
 // We mean it.
 //
 
-#include <QtCore/qglobal.h>
+#include "qwebosglobal_p.h"
+#include <qpa/qplatformoffscreensurface.h>
 
 QT_BEGIN_NAMESPACE
 
-#define Q_EGLFS_EXPORT Q_DECL_EXPORT
+class Q_WEBOS_EXPORT QWebOSOffscreenWindow : public QPlatformOffscreenSurface
+{
+public:
+    QWebOSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface);
+    ~QWebOSOffscreenWindow();
 
-#undef Status
-#undef None
-#undef Bool
-#undef CursorShape
-#undef KeyPress
-#undef KeyRelease
-#undef FocusIn
-#undef FocusOut
-#undef FontChange
-#undef Expose
-#undef Unsorted
+    QSurfaceFormat format() const override { return m_format; }
+    bool isValid() const override { return m_surface != NULL; }
+
+private:
+    QSurfaceFormat m_format;
+    void *m_surface;
+};
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QWEBOSOFFSCREENWINDOW_H

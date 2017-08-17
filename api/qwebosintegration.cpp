@@ -50,10 +50,10 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 
-#include "qeglfsintegration_p.h"
-#include "qeglfswindow_p.h"
-#include "qeglfscontext_p.h"
-#include "qeglfsoffscreenwindow_p.h"
+#include "qwebosintegration_p.h"
+#include "qweboswindow_p.h"
+#include "qwebosglcontext_p.h"
+#include "qwebosoffscreenwindow_p.h"
 
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtServiceSupport/private/qgenericunixservices_p.h>
@@ -61,33 +61,31 @@
 #include <QtEventDispatcherSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
 
-#include <QtPlatformHeaders/qeglfsfunctions.h>
-
 #include <SDL.h>
 #include <PDL.h>
 
 QT_BEGIN_NAMESPACE
 
-QEglFSIntegration::QEglFSIntegration()
+QWebOSIntegration::QWebOSIntegration()
     : m_inputContext(0),
-      m_screenEventHandler(new QQnxScreenEventHandler(this)),
+      m_screenEventHandler(new QWebOSScreenEventHandler(this)),
       m_screenEventThread(0),
       m_fontDb(new QGenericUnixFontDatabase),
       m_services(new QGenericUnixServices)
 {
 }
 
-void QEglFSIntegration::addScreen(QPlatformScreen *screen, bool isPrimary)
+void QWebOSIntegration::addScreen(QPlatformScreen *screen, bool isPrimary)
 {
     screenAdded(screen, isPrimary);
 }
 
-void QEglFSIntegration::removeScreen(QPlatformScreen *screen)
+void QWebOSIntegration::removeScreen(QPlatformScreen *screen)
 {
     destroyScreen(screen);
 }
 
-void QEglFSIntegration::initialize()
+void QWebOSIntegration::initialize()
 {
     PDL_Init(0);
 
@@ -97,14 +95,14 @@ void QEglFSIntegration::initialize()
     atexit(SDL_Quit);
     SDL_EnableUNICODE(true);
 
-    addScreen(new QEglFSScreen(), true);
+    addScreen(new QWebOSScreen(), true);
 
-    m_inputContext = new QQnxInputContext(this);
-    m_screenEventThread = new QQnxScreenEventThread(m_screenEventHandler);
+    m_inputContext = new QWebOSInputContext(this);
+    m_screenEventThread = new QWebOSScreenEventThread(m_screenEventHandler);
     m_screenEventThread->start();
 }
 
-void QEglFSIntegration::destroy()
+void QWebOSIntegration::destroy()
 {
     foreach (QWindow *w, qGuiApp->topLevelWindows())
         w->destroy();
@@ -116,39 +114,39 @@ void QEglFSIntegration::destroy()
     PDL_Quit();
 }
 
-QAbstractEventDispatcher *QEglFSIntegration::createEventDispatcher() const
+QAbstractEventDispatcher *QWebOSIntegration::createEventDispatcher() const
 {
     return createUnixEventDispatcher();
 }
 
-QPlatformServices *QEglFSIntegration::services() const
+QPlatformServices *QWebOSIntegration::services() const
 {
     return m_services.data();
 }
 
-QPlatformFontDatabase *QEglFSIntegration::fontDatabase() const
+QPlatformFontDatabase *QWebOSIntegration::fontDatabase() const
 {
     return m_fontDb.data();
 }
 
-QPlatformTheme *QEglFSIntegration::createPlatformTheme(const QString &name) const
+QPlatformTheme *QWebOSIntegration::createPlatformTheme(const QString &name) const
 {
     return QGenericUnixTheme::createUnixTheme(name);
 }
 
-QPlatformBackingStore *QEglFSIntegration::createPlatformBackingStore(QWindow *window) const
+QPlatformBackingStore *QWebOSIntegration::createPlatformBackingStore(QWindow *window) const
 {
     QOpenGLCompositorBackingStore *bs = new QOpenGLCompositorBackingStore(window);
     if (!window->handle())
         window->create();
-    static_cast<QEglFSWindow *>(window->handle())->setBackingStore(bs);
+    static_cast<QWebOSWindow *>(window->handle())->setBackingStore(bs);
     return bs;
 }
 
-QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
+QPlatformWindow *QWebOSIntegration::createPlatformWindow(QWindow *window) const
 {
     QWindowSystemInterface::flushWindowSystemEvents(QEventLoop::ExcludeUserInputEvents);
-    QEglFSWindow *w = new QEglFSWindow(window);
+    QWebOSWindow *w = new QWebOSWindow(window);
     w->create();
 
     // Activate only the window for the primary screen to make input work
@@ -158,18 +156,18 @@ QPlatformWindow *QEglFSIntegration::createPlatformWindow(QWindow *window) const
     return w;
 }
 
-QPlatformOpenGLContext *QEglFSIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
+QPlatformOpenGLContext *QWebOSIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
-    return new QEglFSContext(context);
+    return new QWebOSGLContext(context);
 }
 
-QPlatformOffscreenSurface *QEglFSIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
+QPlatformOffscreenSurface *QWebOSIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
 {
     QSurfaceFormat fmt = surface->requestedFormat();
-    return new QEglFSOffscreenWindow(fmt, surface);
+    return new QWebOSOffscreenWindow(fmt, surface);
 }
 
-bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) const
+bool QWebOSIntegration::hasCapability(QPlatformIntegration::Capability cap) const
 {
     switch (cap) {
     case ThreadedPixmaps: return false;
@@ -181,26 +179,26 @@ bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
     }
 }
 
-QPlatformNativeInterface *QEglFSIntegration::nativeInterface() const
+QPlatformNativeInterface *QWebOSIntegration::nativeInterface() const
 {
-    return const_cast<QEglFSIntegration *>(this);
+    return const_cast<QWebOSIntegration *>(this);
 }
 
-void *QEglFSIntegration::nativeResourceForIntegration(const QByteArray &resource)
-{
-    Q_UNUSED(resource)
-    void *result = 0;
-    return result;
-}
-
-void *QEglFSIntegration::nativeResourceForScreen(const QByteArray &resource, QScreen *)
+void *QWebOSIntegration::nativeResourceForIntegration(const QByteArray &resource)
 {
     Q_UNUSED(resource)
     void *result = 0;
     return result;
 }
 
-void *QEglFSIntegration::nativeResourceForWindow(const QByteArray &resource, QWindow *window)
+void *QWebOSIntegration::nativeResourceForScreen(const QByteArray &resource, QScreen *)
+{
+    Q_UNUSED(resource)
+    void *result = 0;
+    return result;
+}
+
+void *QWebOSIntegration::nativeResourceForWindow(const QByteArray &resource, QWindow *window)
 {
     Q_UNUSED(resource)
     Q_UNUSED(window)
@@ -208,7 +206,7 @@ void *QEglFSIntegration::nativeResourceForWindow(const QByteArray &resource, QWi
     return result;
 }
 
-void *QEglFSIntegration::nativeResourceForContext(const QByteArray &resource, QOpenGLContext *context)
+void *QWebOSIntegration::nativeResourceForContext(const QByteArray &resource, QOpenGLContext *context)
 {
     Q_UNUSED(resource)
     Q_UNUSED(context)
@@ -216,13 +214,13 @@ void *QEglFSIntegration::nativeResourceForContext(const QByteArray &resource, QO
     return result;
 }
 
-QPlatformNativeInterface::NativeResourceForContextFunction QEglFSIntegration::nativeResourceFunctionForContext(const QByteArray &resource)
+QPlatformNativeInterface::NativeResourceForContextFunction QWebOSIntegration::nativeResourceFunctionForContext(const QByteArray &resource)
 {
     Q_UNUSED(resource)
     return 0;
 }
 
-QFunctionPointer QEglFSIntegration::platformFunction(const QByteArray &function) const
+QFunctionPointer QWebOSIntegration::platformFunction(const QByteArray &function) const
 {
     Q_UNUSED(function)
     return 0;

@@ -1,6 +1,6 @@
-/****************************************************************************
+/***************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2011 - 2012 Research In Motion
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -37,30 +37,46 @@
 **
 ****************************************************************************/
 
-#include "qeglfsoffscreenwindow_p.h"
-#include <QtGui/QOffscreenSurface>
+#ifndef QWEBOSSCREENEVENTTHREAD_H
+#define QWEBOSSCREENEVENTTHREAD_H
+
+#include <QtCore/QThread>
+#include <QtCore/QMutex>
+
+#include <SDL.h>
 
 QT_BEGIN_NAMESPACE
 
-/*
-    In some cases pbuffers are not available. Triggering QtGui's built-in
-    fallback for a hidden QWindow is not suitable for eglfs since this would be
-    treated as an attempt to create multiple top-level, native windows.
+class QWebOSScreenEventHandler;
 
-    Therefore this class is provided as an alternative to QEGLPbuffer.
+typedef QVarLengthArray<SDL_Event, 64> QWebOSScreenEventArray;
 
-    This class requires the hooks to implement createNativeOffscreenWindow().
-*/
-
-QEglFSOffscreenWindow::QEglFSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface)
-    : QPlatformOffscreenSurface(offscreenSurface)
-    , m_format(format)
-    , m_surface(NULL)
+class QWebOSScreenEventThread : public QThread
 {
-}
+    Q_OBJECT
 
-QEglFSOffscreenWindow::~QEglFSOffscreenWindow()
-{
-}
+public:
+    QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler);
+    ~QWebOSScreenEventThread();
+
+    QWebOSScreenEventArray *lock();
+    void unlock();
+
+protected:
+    void run() override;
+
+Q_SIGNALS:
+    void eventPending();
+
+private:
+    void shutdown();
+
+    QMutex m_mutex;
+    QWebOSScreenEventArray m_events;
+    QWebOSScreenEventHandler *m_screenEventHandler;
+    bool m_quit;
+};
 
 QT_END_NAMESPACE
+
+#endif // QWEBOSSCREENEVENTTHREAD_H

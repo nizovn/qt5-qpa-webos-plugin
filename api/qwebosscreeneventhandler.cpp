@@ -37,9 +37,9 @@
 **
 ****************************************************************************/
 
-#include "qqnxscreeneventhandler.h"
-#include "qqnxscreeneventthread.h"
-#include "qeglfsintegration_p.h"
+#include "qwebosscreeneventhandler_p.h"
+#include "qwebosscreeneventthread_p.h"
+#include "qwebosintegration_p.h"
 
 #include <QDebug>
 #include <QGuiApplication>
@@ -48,7 +48,7 @@
 
 #include <QtGui/private/qwindow_p.h>
 
-#if defined(QQNXSCREENEVENT_DEBUG)
+#if defined(QWEBOSSCREENEVENT_DEBUG)
 #define qScreenEventDebug qDebug
 #else
 #define qScreenEventDebug QT_NO_QDEBUG_MACRO
@@ -61,8 +61,8 @@
 
 QT_BEGIN_NAMESPACE
 
-QQnxScreenEventHandler::QQnxScreenEventHandler(QEglFSIntegration *integration)
-    : m_qnxIntegration(integration)
+QWebOSScreenEventHandler::QWebOSScreenEventHandler(QWebOSIntegration *integration)
+    : m_webosIntegration(integration)
     , m_touchDevice(0)
     , m_eventThread(0)
 {
@@ -86,7 +86,7 @@ QQnxScreenEventHandler::QQnxScreenEventHandler(QEglFSIntegration *integration)
     }
 }
 
-bool QQnxScreenEventHandler::handleEvent(SDL_Event event)
+bool QWebOSScreenEventHandler::handleEvent(SDL_Event event)
 {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
@@ -112,7 +112,7 @@ bool QQnxScreenEventHandler::handleEvent(SDL_Event event)
     return true;
 }
 
-void QQnxScreenEventHandler::injectKeyboardEvent(SDL_Event event)
+void QWebOSScreenEventHandler::injectKeyboardEvent(SDL_Event event)
 {
     // determine event type
     QEvent::Type type = (event.type == SDL_KEYUP) ? QEvent::KeyPress : QEvent::KeyRelease;
@@ -126,23 +126,23 @@ void QQnxScreenEventHandler::injectKeyboardEvent(SDL_Event event)
     QWindowSystemInterface::handleKeyEvent(QGuiApplication::focusWindow(), type, keyToPass, (event.key.keysym.mod == KMOD_LSHIFT) ? Qt::ShiftModifier :Qt::NoModifier, QChar(event.key.keysym.unicode), false  ) ;
 }
 
-void QQnxScreenEventHandler::clearCurrentFocusObject()
+void QWebOSScreenEventHandler::clearCurrentFocusObject()
 {
     if (QWindow *focusWindow = QGuiApplication::focusWindow())
         static_cast<QWindowPrivate *>(QObjectPrivate::get(focusWindow))->clearFocusObject();
 }
 
-void QQnxScreenEventHandler::setScreenEventThread(QQnxScreenEventThread *eventThread)
+void QWebOSScreenEventHandler::setScreenEventThread(QWebOSScreenEventThread *eventThread)
 {
     m_eventThread = eventThread;
 }
 
-void QQnxScreenEventHandler::processEventsFromScreenThread()
+void QWebOSScreenEventHandler::processEventsFromScreenThread()
 {
     if (!m_eventThread)
         return;
 
-    QQnxScreenEventArray *events = m_eventThread->lock();
+    QWebOSScreenEventArray *events = m_eventThread->lock();
 
     for (int i = 0; i < events->size(); ++i) {
         SDL_Event event = events->at(i);
@@ -162,12 +162,12 @@ void QQnxScreenEventHandler::processEventsFromScreenThread()
     m_eventThread->unlock();
 }
 
-void QQnxScreenEventHandler::handleKeyboardEvent(SDL_Event event)
+void QWebOSScreenEventHandler::handleKeyboardEvent(SDL_Event event)
 {
     injectKeyboardEvent(event);
 }
 
-void QQnxScreenEventHandler::handleTouchEvent(SDL_Event event)
+void QWebOSScreenEventHandler::handleTouchEvent(SDL_Event event)
 {
     QPoint pos;
     int touchId = MaximumTouchPoints;
@@ -235,14 +235,14 @@ void QQnxScreenEventHandler::handleTouchEvent(SDL_Event event)
     }
 }
 
-void QQnxScreenEventHandler::handleActiveEvent(SDL_Event event)
+void QWebOSScreenEventHandler::handleActiveEvent(SDL_Event event)
 {
     if (event.active.state == SDL_APPACTIVE) {
         Qt::ApplicationState newState = (event.active.gain)? Qt::ApplicationActive : Qt::ApplicationInactive;
         QWindowSystemInterface::handleApplicationStateChanged(newState);
     }
 }
-int QQnxScreenEventHandler::handleSpecialKeys(SDLKey key, int def)
+int QWebOSScreenEventHandler::handleSpecialKeys(SDLKey key, int def)
 {
   // Special-case misc keys
   switch ((int)key)
@@ -275,7 +275,5 @@ int QQnxScreenEventHandler::handleSpecialKeys(SDLKey key, int def)
       return def;
   }
 }
-
-#include "moc_qqnxscreeneventhandler.cpp"
 
 QT_END_NAMESPACE

@@ -37,43 +37,30 @@
 **
 ****************************************************************************/
 
-#ifndef QEGLFSCONTEXT_H
-#define QEGLFSCONTEXT_H
-
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the Qt API.  It exists purely as an
-// implementation detail.  This header file may change from version to
-// version without notice, or even be removed.
-//
-// We mean it.
-//
-
-#include "qeglfsglobal_p.h"
-
-#include <qpa/qplatformopenglcontext.h>
+#include "qwebosoffscreenwindow_p.h"
+#include <QtGui/QOffscreenSurface>
 
 QT_BEGIN_NAMESPACE
 
-class Q_EGLFS_EXPORT QEglFSContext : public QPlatformOpenGLContext
+/*
+    In some cases pbuffers are not available. Triggering QtGui's built-in
+    fallback for a hidden QWindow is not suitable for eglfs since this would be
+    treated as an attempt to create multiple top-level, native windows.
+
+    Therefore this class is provided as an alternative to QEGLPbuffer.
+
+    This class requires the hooks to implement createNativeOffscreenWindow().
+*/
+
+QWebOSOffscreenWindow::QWebOSOffscreenWindow(const QSurfaceFormat &format, QOffscreenSurface *offscreenSurface)
+    : QPlatformOffscreenSurface(offscreenSurface)
+    , m_format(format)
+    , m_surface(NULL)
 {
-public:
-    QEglFSContext(QOpenGLContext *context);
-    ~QEglFSContext();
+}
 
-    bool makeCurrent(QPlatformSurface *surface) override;
-    void doneCurrent() override;
-    void swapBuffers(QPlatformSurface *surface) override;
-    QFunctionPointer getProcAddress(const char *procName) override;
-
-    QSurfaceFormat format() const override;
-
-private:
-    QSurfaceFormat d_format;
-};
+QWebOSOffscreenWindow::~QWebOSOffscreenWindow()
+{
+}
 
 QT_END_NAMESPACE
-
-#endif // QEGLFSCONTEXT_H

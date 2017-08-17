@@ -1,6 +1,6 @@
-/***************************************************************************
+/****************************************************************************
 **
-** Copyright (C) 2011 - 2012 Research In Motion
+** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -37,48 +37,56 @@
 **
 ****************************************************************************/
 
-#ifndef QQNXINPUTCONTEXT_H
-#define QQNXINPUTCONTEXT_H
+#include "qwebosglobal_p.h"
+#include <QtGui/QSurface>
 
-#include <QtCore/QLocale>
-#include <qpa/qplatforminputcontext.h>
-#include <qpa/qplatformintegration.h>
+#include "qwebosglcontext_p.h"
+#include "qweboswindow_p.h"
+
+#include <SDL.h>
 
 QT_BEGIN_NAMESPACE
 
-class QEglFSIntegration;
-
-class QQnxInputContext : public QPlatformInputContext
+QWebOSGLContext::QWebOSGLContext(QOpenGLContext *context)
+    :  QPlatformOpenGLContext()
 {
-    Q_OBJECT
-public:
-    explicit QQnxInputContext(QEglFSIntegration *integration);
-    ~QQnxInputContext();
+    d_format = context->format();
 
-    bool isValid() const override;
+    if (d_format.renderableType() == QSurfaceFormat::DefaultRenderableType)
+        d_format.setRenderableType(QSurfaceFormat::OpenGLES);
 
-    void reset() override;
-    bool filterEvent(const QEvent *event) override;
-    QRectF keyboardRect() const override;
-    bool handleKeyboardEvent(int flags, int sym, int mod, int scan, int cap);
+    if (d_format.renderableType() != QSurfaceFormat::OpenGLES) {
+        return;
+    }
+}
 
-    void showInputPanel() override;
-    void hideInputPanel() override;
-    bool isInputPanelVisible() const override;
+QWebOSGLContext::~QWebOSGLContext()
+{
+}
 
-    void setFocusObject(QObject *object) override;
+bool QWebOSGLContext::makeCurrent(QPlatformSurface *)
+{
+    return true;
+}
 
-private Q_SLOTS:
-    void keyboardHeightChanged();
-    void keyboardVisibilityChanged(bool visible);
+void QWebOSGLContext::doneCurrent()
+{
+}
 
-private:
-    bool hasPhysicalKeyboard();
+void QWebOSGLContext::swapBuffers(QPlatformSurface *)
+{
+    SDL_GL_SwapBuffers();
+}
 
-    bool m_inputPanelVisible;
-    QEglFSIntegration *m_integration;
-};
+void (*QWebOSGLContext::getProcAddress(const char *procName)) ()
+{
+    void (*ptr)() = (void (*)())SDL_GLES_GetProcAddress(procName);
+    return ptr;
+}
+
+QSurfaceFormat QWebOSGLContext::format() const
+{
+    return d_format;
+}
 
 QT_END_NAMESPACE
-
-#endif // QQNXINPUTCONTEXT_H

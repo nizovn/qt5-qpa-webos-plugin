@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QEGLFSSCREEN_H
-#define QEGLFSSCREEN_H
+#ifndef QWEBOSWINDOW_H
+#define QWEBOSWINDOW_H
 
 //
 //  W A R N I N G
@@ -51,48 +51,73 @@
 // We mean it.
 //
 
-#include "qeglfsglobal_p.h"
-#include <QtCore/QPointer>
+#include "qwebosglobal_p.h"
+#include "qwebosintegration_p.h"
+#include "qwebosscreen_p.h"
 
-#include <qpa/qplatformscreen.h>
+#include <qpa/qplatformwindow.h>
+#include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QEglFSWindow;
-class QOpenGLContext;
-
-class Q_EGLFS_EXPORT QEglFSScreen : public QPlatformScreen
+class QOpenGLCompositorBackingStore;
+class QPlatformTextureList;
+class Q_WEBOS_EXPORT QWebOSWindow : public QPlatformWindow, public QOpenGLCompositorWindow
 {
 public:
-    QEglFSScreen();
-    ~QEglFSScreen();
+    QWebOSWindow(QWindow *w);
+    ~QWebOSWindow();
 
+    void create();
+    void destroy();
+
+    void setGeometry(const QRect &) override;
     QRect geometry() const override;
-    virtual QRect rawGeometry() const;
-    int depth() const override;
-    QImage::Format format() const override;
+    void setVisible(bool visible) override;
+    void requestActivateWindow() override;
+    void raise() override;
+    void lower() override;
 
-    QSizeF physicalSize() const override;
-    QDpi logicalDpi() const override;
-    qreal pixelDensity() const override;
-    Qt::ScreenOrientation nativeOrientation() const override;
-    Qt::ScreenOrientation orientation() const override;
+    void propagateSizeHints() override { }
+    void setMask(const QRegion &) override { }
+    bool setKeyboardGrabEnabled(bool) override { return false; }
+    bool setMouseGrabEnabled(bool) override { return false; }
+    void setOpacity(qreal) override;
+    WId winId() const override;
 
-    qreal refreshRate() const override;
+    QSurfaceFormat format() const override;
 
-    QPixmap grabWindow(WId wid, int x, int y, int width, int height) const override;
+    QWebOSScreen *screen() const;
 
-    void *primarySurface() const { return m_surface; }
+    bool hasNativeWindow() const { return m_flags.testFlag(HasNativeWindow); }
 
-private:
-    void setPrimarySurface(void *surface);
+    void invalidateSurface() override;
+    virtual void resetSurface();
 
-    QPointer<QWindow> m_pointerWindow;
+    QOpenGLCompositorBackingStore *backingStore() { return m_backingStore; }
+    void setBackingStore(QOpenGLCompositorBackingStore *backingStore) { m_backingStore = backingStore; }
+    bool isRaster() const;
+    QWindow *sourceWindow() const override;
+    const QPlatformTextureList *textures() const override;
+    void endCompositing() override;
+
+protected:
+    QOpenGLCompositorBackingStore *m_backingStore;
+    bool m_raster;
+    WId m_winId;
+
     void *m_surface;
 
-    friend class QEglFSWindow;
+    QSurfaceFormat m_format;
+
+    enum Flag {
+        Created = 0x01,
+        HasNativeWindow = 0x02
+    };
+    Q_DECLARE_FLAGS(Flags, Flag)
+    Flags m_flags;
 };
 
 QT_END_NAMESPACE
 
-#endif // QEGLFSSCREEN_H
+#endif // QWEBOSWINDOW_H

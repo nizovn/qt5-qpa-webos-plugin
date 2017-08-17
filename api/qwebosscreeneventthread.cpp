@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#include "qqnxscreeneventthread.h"
-#include "qqnxscreeneventhandler.h"
+#include "qwebosscreeneventthread_p.h"
+#include "qwebosscreeneventhandler_p.h"
 
 #include <QtCore/QDebug>
 
@@ -48,13 +48,13 @@
 #include <cctype>
 #include <QGuiApplication>
 
-#if defined(QQNXSCREENEVENTTHREAD_DEBUG)
+#if defined(QWEBOSSCREENEVENTTHREAD_DEBUG)
 #define qScreenEventThreadDebug qDebug
 #else
 #define qScreenEventThreadDebug QT_NO_QDEBUG_MACRO
 #endif
 
-QQnxScreenEventThread::QQnxScreenEventThread(QQnxScreenEventHandler *screenEventHandler)
+QWebOSScreenEventThread::QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler)
     : QThread(),
       m_screenEventHandler(screenEventHandler),
       m_quit(false)
@@ -64,24 +64,24 @@ QQnxScreenEventThread::QQnxScreenEventThread(QQnxScreenEventHandler *screenEvent
     connect(this, SIGNAL(finished()), screenEventHandler, SLOT(processEventsFromScreenThread()), Qt::QueuedConnection);
 }
 
-QQnxScreenEventThread::~QQnxScreenEventThread()
+QWebOSScreenEventThread::~QWebOSScreenEventThread()
 {
     // block until thread terminates
     shutdown();
 }
 
-QQnxScreenEventArray *QQnxScreenEventThread::lock()
+QWebOSScreenEventArray *QWebOSScreenEventThread::lock()
 {
     m_mutex.lock();
     return &m_events;
 }
 
-void QQnxScreenEventThread::unlock()
+void QWebOSScreenEventThread::unlock()
 {
     m_mutex.unlock();
 }
 
-void QQnxScreenEventThread::run()
+void QWebOSScreenEventThread::run()
 {
     qScreenEventThreadDebug("screen event thread started");
 
@@ -92,7 +92,7 @@ void QQnxScreenEventThread::run()
         SDL_Delay(10);
         while (SDL_PollEvent(&sdl_event)) {
             if (sdl_event.type == SDL_QUIT) {
-                      qScreenEventThreadDebug() << Q_FUNC_INFO << "QNX user screen event";
+                      qScreenEventThreadDebug() << Q_FUNC_INFO << "WEBOS user screen event";
                       m_quit = true;
             }
             else {
@@ -116,7 +116,7 @@ void QQnxScreenEventThread::run()
     QGuiApplication::quit();
 }
 
-void QQnxScreenEventThread::shutdown()
+void QWebOSScreenEventThread::shutdown()
 {
     qScreenEventThreadDebug("screen event thread shutdown begin");
 

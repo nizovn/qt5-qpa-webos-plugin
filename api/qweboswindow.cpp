@@ -45,11 +45,11 @@
 #include <QtGui/QOpenGLContext>
 #include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
 
-#include "qeglfswindow_p.h"
+#include "qweboswindow_p.h"
 
 QT_BEGIN_NAMESPACE
 
-QEglFSWindow::QEglFSWindow(QWindow *w)
+QWebOSWindow::QWebOSWindow(QWindow *w)
     : QPlatformWindow(w),
       m_backingStore(0),
       m_raster(false),
@@ -59,7 +59,7 @@ QEglFSWindow::QEglFSWindow(QWindow *w)
 {
 }
 
-QEglFSWindow::~QEglFSWindow()
+QWebOSWindow::~QWebOSWindow()
 {
     destroy();
 }
@@ -69,12 +69,12 @@ static WId newWId()
     static WId id = 0;
 
     if (id == std::numeric_limits<WId>::max())
-        qWarning("QEGLPlatformWindow: Out of window IDs");
+        qWarning("QWEBOSPlatformWindow: Out of window IDs");
 
     return ++id;
 }
 
-void QEglFSWindow::create()
+void QWebOSWindow::create()
 {
     if (m_flags.testFlag(Created))
         return;
@@ -101,13 +101,13 @@ void QEglFSWindow::create()
     // Stop if there is already a window backed by a native window and surface. Additional
     // raster windows will not have their own native window, surface and context. Instead,
     // they will be composited onto the root window's surface.
-    QEglFSScreen *screen = this->screen();
+    QWebOSScreen *screen = this->screen();
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
     if (screen->primarySurface() != NULL) {
         if (Q_UNLIKELY(!isRaster() || !compositor->targetWindow())) {
             // We can have either a single OpenGL window or multiple raster windows.
             // Other combinations cannot work.
-            qFatal("EGLFS: OpenGL windows cannot be mixed with others.");
+            qFatal("WEBOS: OpenGL windows cannot be mixed with others.");
             return;
         }
         m_format = compositor->targetWindow()->format();
@@ -127,9 +127,9 @@ void QEglFSWindow::create()
         context->setFormat(m_format);
         context->setScreen(window()->screen());
         if (Q_UNLIKELY(!context->create()))
-            qFatal("EGLFS: Failed to create compositing context");
+            qFatal("WEBOS: Failed to create compositing context");
         compositor->setTarget(context, window(), screen->rawGeometry());
-        compositor->setRotation(qEnvironmentVariableIntValue("QT_QPA_EGLFS_ROTATION"));
+        compositor->setRotation(qEnvironmentVariableIntValue("QT_QPA_WEBOS_ROTATION"));
         // If there is a "root" window into which raster and QOpenGLWidget content is
         // composited, all other contexts must share with its context.
         if (!qt_gl_global_share_context()) {
@@ -141,9 +141,9 @@ void QEglFSWindow::create()
     }
 }
 
-void QEglFSWindow::destroy()
+void QWebOSWindow::destroy()
 {
-    QEglFSScreen *screen = this->screen();
+    QWebOSScreen *screen = this->screen();
     if (m_flags.testFlag(HasNativeWindow)) {
         if (screen->primarySurface() == m_surface)
             screen->setPrimarySurface(NULL);
@@ -155,17 +155,17 @@ void QEglFSWindow::destroy()
     QOpenGLCompositor::instance()->removeWindow(this);
 }
 
-void QEglFSWindow::invalidateSurface()
+void QWebOSWindow::invalidateSurface()
 {
 }
 
-void QEglFSWindow::resetSurface()
+void QWebOSWindow::resetSurface()
 {
     m_format = window()->requestedFormat();
     m_surface = (void *) 1;
 }
 
-void QEglFSWindow::setVisible(bool visible)
+void QWebOSWindow::setVisible(bool visible)
 {
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
     QList<QOpenGLCompositorWindow *> windows = compositor->windows();
@@ -187,7 +187,7 @@ void QEglFSWindow::setVisible(bool visible)
         QWindowSystemInterface::flushWindowSystemEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
-void QEglFSWindow::setGeometry(const QRect &r)
+void QWebOSWindow::setGeometry(const QRect &r)
 {
     QRect rect;
     bool forceFullscreen = m_flags.testFlag(HasNativeWindow);
@@ -207,7 +207,7 @@ void QEglFSWindow::setGeometry(const QRect &r)
         QWindowSystemInterface::handleExposeEvent(window(), QRect(QPoint(0, 0), rect.size()));
 }
 
-QRect QEglFSWindow::geometry() const
+QRect QWebOSWindow::geometry() const
 {
     // For yet-to-become-fullscreen windows report the geometry covering the entire
     // screen. This is particularly important for Quick where the root object may get
@@ -218,7 +218,7 @@ QRect QEglFSWindow::geometry() const
     return QPlatformWindow::geometry();
 }
 
-void QEglFSWindow::requestActivateWindow()
+void QWebOSWindow::requestActivateWindow()
 {
     if (window()->type() != Qt::Desktop)
         QOpenGLCompositor::instance()->moveToTop(this);
@@ -227,7 +227,7 @@ void QEglFSWindow::requestActivateWindow()
     QWindowSystemInterface::handleExposeEvent(wnd, QRect(QPoint(0, 0), wnd->geometry().size()));
 }
 
-void QEglFSWindow::raise()
+void QWebOSWindow::raise()
 {
     QWindow *wnd = window();
     if (wnd->type() != Qt::Desktop) {
@@ -236,7 +236,7 @@ void QEglFSWindow::raise()
     }
 }
 
-void QEglFSWindow::lower()
+void QWebOSWindow::lower()
 {
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
     QList<QOpenGLCompositorWindow *> windows = compositor->windows();
@@ -250,27 +250,27 @@ void QEglFSWindow::lower()
     }
 }
 
-QSurfaceFormat QEglFSWindow::format() const
+QSurfaceFormat QWebOSWindow::format() const
 {
     return m_format;
 }
 
-QEglFSScreen *QEglFSWindow::screen() const
+QWebOSScreen *QWebOSWindow::screen() const
 {
-    return static_cast<QEglFSScreen *>(QPlatformWindow::screen());
+    return static_cast<QWebOSScreen *>(QPlatformWindow::screen());
 }
 
-bool QEglFSWindow::isRaster() const
+bool QWebOSWindow::isRaster() const
 {
     return m_raster || window()->surfaceType() == QSurface::RasterGLSurface;
 }
 
-QWindow *QEglFSWindow::sourceWindow() const
+QWindow *QWebOSWindow::sourceWindow() const
 {
     return window();
 }
 
-const QPlatformTextureList *QEglFSWindow::textures() const
+const QPlatformTextureList *QWebOSWindow::textures() const
 {
     if (m_backingStore)
         return m_backingStore->textures();
@@ -278,21 +278,21 @@ const QPlatformTextureList *QEglFSWindow::textures() const
     return 0;
 }
 
-void QEglFSWindow::endCompositing()
+void QWebOSWindow::endCompositing()
 {
     if (m_backingStore)
         m_backingStore->notifyComposited();
 }
 
-WId QEglFSWindow::winId() const
+WId QWebOSWindow::winId() const
 {
     return m_winId;
 }
 
-void QEglFSWindow::setOpacity(qreal)
+void QWebOSWindow::setOpacity(qreal)
 {
     if (!isRaster())
-        qWarning("QEglFSWindow: Cannot set opacity for non-raster windows");
+        qWarning("QWebOSWindow: Cannot set opacity for non-raster windows");
 
     // Nothing to do here. The opacity is stored in the QWindow.
 }

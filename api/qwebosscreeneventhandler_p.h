@@ -1,6 +1,6 @@
-/****************************************************************************
+/***************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2013 BlackBerry Limited. All rights reserved.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -37,28 +37,52 @@
 **
 ****************************************************************************/
 
-#include <qpa/qplatformintegrationplugin.h>
-#include "qeglfsintegration_p.h"
+#ifndef QWEBOSSCREENEVENTHANDLER_H
+#define QWEBOSSCREENEVENTHANDLER_H
+
+#include <qpa/qwindowsysteminterface.h>
+
+#include <SDL.h>
+#include <PDL.h>
 
 QT_BEGIN_NAMESPACE
 
-class QEglFSIntegrationPlugin : public QPlatformIntegrationPlugin
+class QWebOSIntegration;
+class QWebOSScreenEventThread;
+
+class QWebOSScreenEventHandler : public QObject
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID QPlatformIntegrationFactoryInterface_iid FILE "eglfs.json")
 public:
-    QPlatformIntegration *create(const QString&, const QStringList&) override;
+    explicit QWebOSScreenEventHandler(QWebOSIntegration *integration);
+
+    bool handleEvent(SDL_Event event);
+
+    static void injectKeyboardEvent(SDL_Event event);
+    static void clearCurrentFocusObject();
+    static int handleSpecialKeys(SDLKey key, int def);
+
+    void setScreenEventThread(QWebOSScreenEventThread *eventThread);
+
+private Q_SLOTS:
+    void processEventsFromScreenThread();
+
+private:
+    void handleKeyboardEvent(SDL_Event event);
+    void handleTouchEvent(SDL_Event event);
+    void handleActiveEvent(SDL_Event event);
+
+private:
+    enum {
+        MaximumTouchPoints = 5
+    };
+
+    QWebOSIntegration *m_webosIntegration;
+    QTouchDevice *m_touchDevice;
+    QWindowSystemInterface::TouchPoint m_touchPoints[MaximumTouchPoints];
+    QWebOSScreenEventThread *m_eventThread;
 };
-
-QPlatformIntegration* QEglFSIntegrationPlugin::create(const QString& system, const QStringList& paramList)
-{
-    Q_UNUSED(paramList);
-    if (!system.compare(QLatin1String("webos"), Qt::CaseInsensitive))
-        return new QEglFSIntegration;
-
-    return 0;
-}
 
 QT_END_NAMESPACE
 
-#include "qeglfsmain.moc"
+#endif // QWEBOSSCREENEVENTHANDLER_H

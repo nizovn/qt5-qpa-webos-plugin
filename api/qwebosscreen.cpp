@@ -43,28 +43,28 @@
 #include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
 #include <private/qmath_p.h>
 
-#include "qeglfsscreen_p.h"
-#include "qeglfswindow_p.h"
+#include "qwebosscreen_p.h"
+#include "qweboswindow_p.h"
 
 #include <SDL.h>
 
 QT_BEGIN_NAMESPACE
 
-QEglFSScreen::QEglFSScreen()
+QWebOSScreen::QWebOSScreen()
     : m_surface(NULL)
 {
 }
 
-QEglFSScreen::~QEglFSScreen()
+QWebOSScreen::~QWebOSScreen()
 {
     QOpenGLCompositor::destroy();
 }
 
-QRect QEglFSScreen::geometry() const
+QRect QWebOSScreen::geometry() const
 {
     QRect r = rawGeometry();
 
-    static int rotation = qEnvironmentVariableIntValue("QT_QPA_EGLFS_ROTATION");
+    static int rotation = qEnvironmentVariableIntValue("QT_QPA_WEBOS_ROTATION");
     switch (rotation) {
     case 0:
     case 180:
@@ -78,14 +78,14 @@ QRect QEglFSScreen::geometry() const
         break;
     }
     default:
-        qWarning("Invalid rotation %d specified in QT_QPA_EGLFS_ROTATION", rotation);
+        qWarning("Invalid rotation %d specified in QT_QPA_WEBOS_ROTATION", rotation);
         break;
     }
 
     return r;
 }
 
-QRect QEglFSScreen::rawGeometry() const
+QRect QWebOSScreen::rawGeometry() const
 {
     const SDL_VideoInfo* info = SDL_GetVideoInfo();
     const int defaultWidth = info->current_w;
@@ -94,8 +94,8 @@ QRect QEglFSScreen::rawGeometry() const
     static QSize size;
 
     if (size.isEmpty()) {
-        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_WIDTH");
-        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_HEIGHT");
+        int width = qEnvironmentVariableIntValue("QT_QPA_WEBOS_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_WEBOS_HEIGHT");
 
         if (width && height) {
             size.setWidth(width);
@@ -109,11 +109,11 @@ QRect QEglFSScreen::rawGeometry() const
     return QRect(QPoint(0, 0), size);
 }
 
-int QEglFSScreen::depth() const
+int QWebOSScreen::depth() const
 {
     const SDL_VideoInfo* info = SDL_GetVideoInfo();
     const int defaultDepth = info->vfmt->BitsPerPixel;
-    static int depth = qEnvironmentVariableIntValue("QT_QPA_EGLFS_DEPTH");
+    static int depth = qEnvironmentVariableIntValue("QT_QPA_WEBOS_DEPTH");
 
     if (depth == 0) {
         depth = defaultDepth;
@@ -121,20 +121,20 @@ int QEglFSScreen::depth() const
     return depth;
 }
 
-QImage::Format QEglFSScreen::format() const
+QImage::Format QWebOSScreen::format() const
 {
     return depth() == 16 ? QImage::Format_RGB16 : QImage::Format_RGB32;
 }
 
-QSizeF QEglFSScreen::physicalSize() const
+QSizeF QWebOSScreen::physicalSize() const
 {
     const int defaultPhysicalDpi = 100;
     static QSizeF size;
 
     if (size.isEmpty()) {
         // Note: in millimeters
-        int width = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_WIDTH");
-        int height = qEnvironmentVariableIntValue("QT_QPA_EGLFS_PHYSICAL_HEIGHT");
+        int width = qEnvironmentVariableIntValue("QT_QPA_WEBOS_PHYSICAL_WIDTH");
+        int height = qEnvironmentVariableIntValue("QT_QPA_WEBOS_PHYSICAL_HEIGHT");
 
         if (width && height) {
             size.setWidth(width);
@@ -144,15 +144,15 @@ QSizeF QEglFSScreen::physicalSize() const
             size.setWidth(screen()->size().width() * Q_MM_PER_INCH / defaultPhysicalDpi);
             size.setHeight(screen()->size().height() * Q_MM_PER_INCH / defaultPhysicalDpi);
             qWarning("Unable to query physical screen size, defaulting to %d dpi.\n"
-                     "To override, set QT_QPA_EGLFS_PHYSICAL_WIDTH "
-                     "and QT_QPA_EGLFS_PHYSICAL_HEIGHT (in millimeters).", defaultPhysicalDpi);
+                     "To override, set QT_QPA_WEBOS_PHYSICAL_WIDTH "
+                     "and QT_QPA_WEBOS_PHYSICAL_HEIGHT (in millimeters).", defaultPhysicalDpi);
         }
     }
 
     return size;
 }
 
-QDpi QEglFSScreen::logicalDpi() const
+QDpi QWebOSScreen::logicalDpi() const
 {
     const QSizeF ps = physicalSize();
     const QSize s = screen()->size();
@@ -164,32 +164,32 @@ QDpi QEglFSScreen::logicalDpi() const
         return QDpi(100, 100);
 }
 
-qreal QEglFSScreen::pixelDensity() const
+qreal QWebOSScreen::pixelDensity() const
 {
     return qMax(1, qRound(logicalDpi().first / qreal(100)));
 }
 
-Qt::ScreenOrientation QEglFSScreen::nativeOrientation() const
+Qt::ScreenOrientation QWebOSScreen::nativeOrientation() const
 {
     return Qt::PrimaryOrientation;
 }
 
-Qt::ScreenOrientation QEglFSScreen::orientation() const
+Qt::ScreenOrientation QWebOSScreen::orientation() const
 {
     return Qt::PrimaryOrientation;
 }
 
-qreal QEglFSScreen::refreshRate() const
+qreal QWebOSScreen::refreshRate() const
 {
     return 60;
 }
 
-void QEglFSScreen::setPrimarySurface(void *surface)
+void QWebOSScreen::setPrimarySurface(void *surface)
 {
     m_surface = surface;
 }
 
-QPixmap QEglFSScreen::grabWindow(WId wid, int x, int y, int width, int height) const
+QPixmap QWebOSScreen::grabWindow(WId wid, int x, int y, int width, int height) const
 {
     QOpenGLCompositor *compositor = QOpenGLCompositor::instance();
     const QList<QOpenGLCompositorWindow *> windows = compositor->windows();
@@ -197,7 +197,7 @@ QPixmap QEglFSScreen::grabWindow(WId wid, int x, int y, int width, int height) c
 
     QImage img;
 
-    if (static_cast<QEglFSWindow *>(windows.first()->sourceWindow()->handle())->isRaster()) {
+    if (static_cast<QWebOSWindow *>(windows.first()->sourceWindow()->handle())->isRaster()) {
         // Request the compositor to render everything into an FBO and read it back. This
         // is of course slow, but it's safe and reliable. It will not include the mouse
         // cursor, which is a plus.

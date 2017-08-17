@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#include "qqnxinputcontext_noimf.h"
-#include "qeglfsintegration_p.h"
+#include "qwebosinputcontext_p.h"
+#include "qwebosintegration_p.h"
 
 #include <QtCore/QDebug>
 #include <QtGui/QGuiApplication>
@@ -46,7 +46,7 @@
 
 #include <PDL.h>
 
-#if defined(QQNXINPUTCONTEXT_DEBUG)
+#if defined(QWEBOSINPUTCONTEXT_DEBUG)
 #define qInputContextDebug qDebug
 #else
 #define qInputContextDebug QT_NO_QDEBUG_MACRO
@@ -54,7 +54,7 @@
 
 QT_BEGIN_NAMESPACE
 
-QQnxInputContext::QQnxInputContext(QEglFSIntegration *integration) :
+QWebOSInputContext::QWebOSInputContext(QWebOSIntegration *integration) :
     QPlatformInputContext(),
     m_inputPanelVisible(false),
     m_integration(integration)
@@ -62,26 +62,26 @@ QQnxInputContext::QQnxInputContext(QEglFSIntegration *integration) :
     keyboardVisibilityChanged(false);
 }
 
-QQnxInputContext::~QQnxInputContext()
+QWebOSInputContext::~QWebOSInputContext()
 {
 }
 
-bool QQnxInputContext::isValid() const
+bool QWebOSInputContext::isValid() const
 {
     return true;
 }
 
-bool QQnxInputContext::hasPhysicalKeyboard()
+bool QWebOSInputContext::hasPhysicalKeyboard()
 {
     // TODO: This should query the system to check if a USB keyboard is connected.
     return false;
 }
 
-void QQnxInputContext::reset()
+void QWebOSInputContext::reset()
 {
 }
 
-bool QQnxInputContext::filterEvent( const QEvent *event )
+bool QWebOSInputContext::filterEvent( const QEvent *event )
 {
     if (hasPhysicalKeyboard())
         return false;
@@ -102,14 +102,14 @@ bool QQnxInputContext::filterEvent( const QEvent *event )
 
 }
 
-QRectF QQnxInputContext::keyboardRect() const
+QRectF QWebOSInputContext::keyboardRect() const
 {
     QRect screenGeometry = QGuiApplication::primaryScreen()->geometry();
     return QRectF(screenGeometry.x(), screenGeometry.height() - 100,
                   screenGeometry.width(), 100);
 }
 
-bool QQnxInputContext::handleKeyboardEvent(int flags, int sym, int mod, int scan, int cap)
+bool QWebOSInputContext::handleKeyboardEvent(int flags, int sym, int mod, int scan, int cap)
 {
     Q_UNUSED(flags);
     Q_UNUSED(sym);
@@ -119,7 +119,7 @@ bool QQnxInputContext::handleKeyboardEvent(int flags, int sym, int mod, int scan
     return false;
 }
 
-void QQnxInputContext::showInputPanel()
+void QWebOSInputContext::showInputPanel()
 {
     qInputContextDebug();
     if (!m_inputPanelVisible) {
@@ -128,7 +128,7 @@ void QQnxInputContext::showInputPanel()
     }
 }
 
-void QQnxInputContext::hideInputPanel()
+void QWebOSInputContext::hideInputPanel()
 {
     qInputContextDebug();
     if (m_inputPanelVisible) {
@@ -137,17 +137,17 @@ void QQnxInputContext::hideInputPanel()
     }
 }
 
-bool QQnxInputContext::isInputPanelVisible() const
+bool QWebOSInputContext::isInputPanelVisible() const
 {
     return m_inputPanelVisible;
 }
 
-void QQnxInputContext::keyboardHeightChanged()
+void QWebOSInputContext::keyboardHeightChanged()
 {
     emitKeyboardRectChanged();
 }
 
-void QQnxInputContext::keyboardVisibilityChanged(bool visible)
+void QWebOSInputContext::keyboardVisibilityChanged(bool visible)
 {
     qInputContextDebug() << "visible=" << visible;
     if (m_inputPanelVisible != visible) {
@@ -156,7 +156,7 @@ void QQnxInputContext::keyboardVisibilityChanged(bool visible)
     }
 }
 
-void QQnxInputContext::setFocusObject(QObject *object)
+void QWebOSInputContext::setFocusObject(QObject *object)
 {
     qInputContextDebug() << "input item=" << object;
 

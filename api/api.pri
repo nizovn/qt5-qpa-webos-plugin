@@ -1,21 +1,21 @@
 
-SOURCES +=  $$PWD/qeglfswindow.cpp \
-            $$PWD/qeglfsscreen.cpp \
-            $$PWD/qeglfsintegration.cpp \
-            $$PWD/qqnxscreeneventthread.cpp \
-            $$PWD/qqnxscreeneventhandler.cpp \
-            $$PWD/qqnxinputcontext_noimf.cpp \
-            $$PWD/qeglfscontext.cpp \
-            $$PWD/qeglfsoffscreenwindow.cpp
+SOURCES +=  $$PWD/qweboswindow.cpp \
+            $$PWD/qwebosscreen.cpp \
+            $$PWD/qwebosintegration.cpp \
+            $$PWD/qwebosscreeneventthread.cpp \
+            $$PWD/qwebosscreeneventhandler.cpp \
+            $$PWD/qwebosinputcontext.cpp \
+            $$PWD/qwebosglcontext.cpp \
+            $$PWD/qwebosoffscreenwindow.cpp
 
-HEADERS +=  $$PWD/qeglfswindow_p.h \
-            $$PWD/qeglfsscreen_p.h \
-            $$PWD/qeglfsintegration_p.h \
-            $$PWD/qeglfsoffscreenwindow_p.h \
-            $$PWD/qqnxscreeneventthread.h \
-            $$PWD/qqnxscreeneventhandler.h \
-            $$PWD/qqnxinputcontext_noimf.h \
-            $$PWD/qeglfscontext_p.h \
-            $$PWD/qeglfsglobal_p.h
+HEADERS +=  $$PWD/qweboswindow_p.h \
+            $$PWD/qwebosscreen_p.h \
+            $$PWD/qwebosintegration_p.h \
+            $$PWD/qwebosoffscreenwindow_p.h \
+            $$PWD/qwebosscreeneventthread_p.h \
+            $$PWD/qwebosscreeneventhandler_p.h \
+            $$PWD/qwebosinputcontext_p.h \
+            $$PWD/qwebosglcontext_p.h \
+            $$PWD/qwebosglobal_p.h
 
 INCLUDEPATH += $$PWD

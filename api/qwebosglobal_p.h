@@ -37,56 +37,38 @@
 **
 ****************************************************************************/
 
-#include "qeglfsglobal_p.h"
-#include <QtGui/QSurface>
+#ifndef QWEBOSGLOBAL_H
+#define QWEBOSGLOBAL_H
 
-#include "qeglfscontext_p.h"
-#include "qeglfswindow_p.h"
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the Qt API.  It exists purely as an
+// implementation detail.  This header file may change from version to
+// version without notice, or even be removed.
+//
+// We mean it.
+//
 
-#include <SDL.h>
+#include <QtCore/qglobal.h>
 
 QT_BEGIN_NAMESPACE
 
-QEglFSContext::QEglFSContext(QOpenGLContext *context)
-    :  QPlatformOpenGLContext()
-{
-    d_format = context->format();
+#define Q_WEBOS_EXPORT Q_DECL_EXPORT
 
-    if (d_format.renderableType() == QSurfaceFormat::DefaultRenderableType)
-        d_format.setRenderableType(QSurfaceFormat::OpenGLES);
-
-    if (d_format.renderableType() != QSurfaceFormat::OpenGLES) {
-        return;
-    }
-}
-
-QEglFSContext::~QEglFSContext()
-{
-}
-
-bool QEglFSContext::makeCurrent(QPlatformSurface *)
-{
-    return true;
-}
-
-void QEglFSContext::doneCurrent()
-{
-}
-
-void QEglFSContext::swapBuffers(QPlatformSurface *)
-{
-    SDL_GL_SwapBuffers();
-}
-
-void (*QEglFSContext::getProcAddress(const char *procName)) ()
-{
-    void (*ptr)() = (void (*)())SDL_GLES_GetProcAddress(procName);
-    return ptr;
-}
-
-QSurfaceFormat QEglFSContext::format() const
-{
-    return d_format;
-}
+#undef Status
+#undef None
+#undef Bool
+#undef CursorShape
+#undef KeyPress
+#undef KeyRelease
+#undef FocusIn
+#undef FocusOut
+#undef FontChange
+#undef Expose
+#undef Unsorted
 
 QT_END_NAMESPACE
+
+#endif
