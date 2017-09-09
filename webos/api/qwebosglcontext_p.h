@@ -52,6 +52,7 @@
 //
 
 #include "qwebosglobal_p.h"
+#include "qwebosintegration_p.h"
 
 #include <qpa/qplatformopenglcontext.h>
 
@@ -72,6 +73,7 @@ public:
 
 private:
     QSurfaceFormat d_format;
+    QWebOSIntegration *m_integration;
 };
 
 QT_END_NAMESPACE

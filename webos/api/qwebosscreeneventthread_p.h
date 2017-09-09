@@ -56,7 +56,7 @@ class QWebOSScreenEventThread : public QThread
     Q_OBJECT
 
 public:
-    QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler);
+    QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler, int sdlDelay);
     ~QWebOSScreenEventThread();
 
     QWebOSScreenEventArray *lock();
@@ -74,6 +74,7 @@ private:
     QMutex m_mutex;
     QWebOSScreenEventArray m_events;
     QWebOSScreenEventHandler *m_screenEventHandler;
+    int m_sdlDelay;
     bool m_quit;
 };
 

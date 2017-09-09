@@ -100,13 +100,21 @@ public:
     void addScreen(QPlatformScreen *screen, bool isPrimary = false);
     void removeScreen(QPlatformScreen *screen);
 
+    void pauseSDLEvents();
+    void resumeSDLEvents();
+
 private:
+    void processSDLEvents();
 
     QPlatformInputContext *m_inputContext;
     QWebOSScreenEventHandler *m_screenEventHandler;
     QWebOSScreenEventThread *m_screenEventThread;
     QScopedPointer<QPlatformFontDatabase> m_fontDb;
     QScopedPointer<QPlatformServices> m_services;
+
+    QTimer *m_sdlEventsTimer;
+    bool m_sdlEventsPaused;
+    bool m_sdlEventsNeedUpdate;
 };
 
 QT_END_NAMESPACE

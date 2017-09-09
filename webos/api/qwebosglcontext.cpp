@@ -39,6 +39,7 @@
 
 #include "qwebosglobal_p.h"
 #include <QtGui/QSurface>
+#include <private/qguiapplication_p.h>
 
 #include "qwebosglcontext_p.h"
 #include "qweboswindow_p.h"
@@ -58,6 +59,7 @@ QWebOSGLContext::QWebOSGLContext(QOpenGLContext *context)
     if (d_format.renderableType() != QSurfaceFormat::OpenGLES) {
         return;
     }
+    m_integration = static_cast<QWebOSIntegration *>(QGuiApplicationPrivate::platformIntegration());
 }
 
 QWebOSGLContext::~QWebOSGLContext()
@@ -66,6 +68,7 @@ QWebOSGLContext::~QWebOSGLContext()
 
 bool QWebOSGLContext::makeCurrent(QPlatformSurface *)
 {
+    m_integration->pauseSDLEvents();
     return true;
 }
 
@@ -76,6 +79,7 @@ void QWebOSGLContext::doneCurrent()
 void QWebOSGLContext::swapBuffers(QPlatformSurface *)
 {
     SDL_GL_SwapBuffers();
+    m_integration->resumeSDLEvents();
 }
 
 void (*QWebOSGLContext::getProcAddress(const char *procName)) ()

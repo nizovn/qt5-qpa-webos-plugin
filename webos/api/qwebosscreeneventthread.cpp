@@ -54,9 +54,10 @@
 #define qScreenEventThreadDebug QT_NO_QDEBUG_MACRO
 #endif
 
-QWebOSScreenEventThread::QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler)
+QWebOSScreenEventThread::QWebOSScreenEventThread(QWebOSScreenEventHandler *screenEventHandler, int sdlDelay)
     : QThread(),
       m_screenEventHandler(screenEventHandler),
+      m_sdlDelay(sdlDelay),
       m_quit(false)
 {
     screenEventHandler->setScreenEventThread(this);
@@ -85,22 +86,26 @@ void QWebOSScreenEventThread::run()
 {
     qScreenEventThreadDebug("screen event thread started");
 
-    SDL_Event sdl_event;
+    SDL_Event sdl_events[16];
+    int num;
 
     // loop indefinitely
     while (!m_quit) {
-        SDL_Delay(10);
-        while (SDL_PollEvent(&sdl_event)) {
-            if (sdl_event.type == SDL_QUIT) {
-                      qScreenEventThreadDebug() << Q_FUNC_INFO << "WEBOS user screen event";
-                      m_quit = true;
+        SDL_Delay(m_sdlDelay);
+        while ( (!m_quit) && ((num = SDL_PeepEvents(sdl_events, 16, SDL_GETEVENT, SDL_ALLEVENTS)) > 0) ) {
+            for (int i = 0; i < num; i++) {
+                if (sdl_events[i].type == SDL_QUIT) {
+                    qScreenEventThreadDebug() << Q_FUNC_INFO << "WEBOS user screen event";
+                    m_quit = true;
+                    break;
+                }
+                else {
+                    m_mutex.lock();
+                    m_events << sdl_events[i];
+                    m_mutex.unlock();
+                }
             }
-            else {
-                m_mutex.lock();
-                m_events << sdl_event;
-                m_mutex.unlock();
-                emit eventPending();
-            }
+            emit eventPending();
         }
     }
 

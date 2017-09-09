@@ -90,16 +90,53 @@ void QWebOSIntegration::initialize()
     PDL_Init(0);
 
     SDL_Init(SDL_INIT_VIDEO);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
     SDL_SetVideoMode(0, 0, 32, SDL_OPENGL);
     atexit(PDL_Quit);
     atexit(SDL_Quit);
+
     SDL_EnableUNICODE(true);
 
     addScreen(new QWebOSScreen(), true);
+    int sdlDelay = 100;
+    sdlDelay = qEnvironmentVariableIntValue("QT_QPA_WEBOS_EVENT_DELAY");
+    if (sdlDelay < 10)
+        sdlDelay = 10;
+
+    m_sdlEventsPaused = false;
+    m_sdlEventsNeedUpdate = false;
+    m_sdlEventsTimer = new QTimer(this);
+    m_sdlEventsTimer->setInterval(sdlDelay);
+    connect(m_sdlEventsTimer, &QTimer::timeout, this, &QWebOSIntegration::processSDLEvents);
+    m_sdlEventsTimer->start();
 
     m_inputContext = new QWebOSInputContext(this);
-    m_screenEventThread = new QWebOSScreenEventThread(m_screenEventHandler);
+    m_screenEventThread = new QWebOSScreenEventThread(m_screenEventHandler, sdlDelay);
     m_screenEventThread->start();
+}
+
+void QWebOSIntegration::pauseSDLEvents()
+{
+    m_sdlEventsPaused = true;
+}
+
+void QWebOSIntegration::resumeSDLEvents()
+{
+    m_sdlEventsPaused = false;
+    if (m_sdlEventsNeedUpdate)
+        processSDLEvents();
+    m_sdlEventsNeedUpdate = false;
+    m_sdlEventsTimer->start();
+}
+
+void QWebOSIntegration::processSDLEvents()
+{
+    if (!m_sdlEventsPaused)
+        SDL_PumpEvents();
+    else
+        m_sdlEventsNeedUpdate = false;
 }
 
 void QWebOSIntegration::destroy()
