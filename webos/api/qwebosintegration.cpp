@@ -98,6 +98,8 @@ void QWebOSIntegration::initialize()
     atexit(SDL_Quit);
 
     SDL_EnableUNICODE(true);
+    if (!qEnvironmentVariableIsEmpty("QT_QPA_WEBOS_SCREEN_TIMEOUT_ENABLED"))
+        PDL_ScreenTimeoutEnable(PDL_TRUE);
 
     addScreen(new QWebOSScreen(), true);
     int sdlDelay = 100;
