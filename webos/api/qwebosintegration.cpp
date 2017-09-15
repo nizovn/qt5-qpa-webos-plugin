@@ -54,9 +54,9 @@
 #include "qweboswindow_p.h"
 #include "qwebosglcontext_p.h"
 #include "qwebosoffscreenwindow_p.h"
+#include "qwebosservices_p.h"
 
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
-#include <QtServiceSupport/private/qgenericunixservices_p.h>
 #include <QtThemeSupport/private/qgenericunixthemes_p.h>
 #include <QtEventDispatcherSupport/private/qgenericunixeventdispatcher_p.h>
 #include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
@@ -71,7 +71,7 @@ QWebOSIntegration::QWebOSIntegration()
       m_screenEventHandler(new QWebOSScreenEventHandler(this)),
       m_screenEventThread(0),
       m_fontDb(new QGenericUnixFontDatabase),
-      m_services(new QGenericUnixServices)
+      m_services(new QWebOSServices)
 {
 }
 

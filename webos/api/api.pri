@@ -6,7 +6,8 @@ SOURCES +=  $$PWD/qweboswindow.cpp \
             $$PWD/qwebosscreeneventhandler.cpp \
             $$PWD/qwebosinputcontext.cpp \
             $$PWD/qwebosglcontext.cpp \
-            $$PWD/qwebosoffscreenwindow.cpp
+            $$PWD/qwebosoffscreenwindow.cpp \
+            $$PWD/qwebosservices.cpp
 
 HEADERS +=  $$PWD/qweboswindow_p.h \
             $$PWD/qwebosscreen_p.h \
@@ -16,6 +17,7 @@ HEADERS +=  $$PWD/qweboswindow_p.h \
             $$PWD/qwebosscreeneventhandler_p.h \
             $$PWD/qwebosinputcontext_p.h \
             $$PWD/qwebosglcontext_p.h \
-            $$PWD/qwebosglobal_p.h
+            $$PWD/qwebosglobal_p.h \
+            $$PWD/qwebosservices_p.h
 
 INCLUDEPATH += $$PWD
