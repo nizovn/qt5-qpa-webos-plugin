@@ -53,4 +53,8 @@ MY_PREFIX=/home/nizovn/webos/qt5/qt5.9/runtime
 -force-pkg-config \
 -eglfs \
 -alsa \
+-proprietary-codecs \
+-pepper-plugins \
+-printing-and-pdf \
+-webrtc \
 -opengl es2
