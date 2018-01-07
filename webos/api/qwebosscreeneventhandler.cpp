@@ -278,8 +278,14 @@ void QWebOSScreenEventHandler::handleActiveEvent(SDL_Event event)
     if (event.active.state == SDL_APPACTIVE) {
         Qt::ApplicationState newState = (event.active.gain)? Qt::ApplicationActive : Qt::ApplicationInactive;
         QWindowSystemInterface::handleApplicationStateChanged(newState);
+
+        QWindowList wl = QGuiApplication::topLevelWindows();
+        foreach (QWindow *w, wl) {
+            w->requestUpdate();
+        }
     }
 }
+
 int QWebOSScreenEventHandler::handleSpecialKeys(SDLKey key, int def)
 {
   // Special-case misc keys
