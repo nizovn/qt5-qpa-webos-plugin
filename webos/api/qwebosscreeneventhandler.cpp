@@ -59,6 +59,9 @@
 #define HP_BT_RIGHT 20
 #define HP_BT_DOWN 21
 
+#define LONGTAP_TIMEOUT_MS 800
+#define MAX_TAP_MOVE_PIXEL 8
+
 QT_BEGIN_NAMESPACE
 
 QWebOSScreenEventHandler::QWebOSScreenEventHandler(QWebOSIntegration *integration)
@@ -71,6 +74,7 @@ QWebOSScreenEventHandler::QWebOSScreenEventHandler(QWebOSIntegration *integratio
     m_touchDevice->setType(QTouchDevice::TouchScreen);
     m_touchDevice->setCapabilities(QTouchDevice::Position);
     QWindowSystemInterface::registerTouchDevice(m_touchDevice);
+    bool rightClickOnLongTap = !qEnvironmentVariableIsEmpty("QT_QPA_WEBOS_RIGHT_CLICK_ON_LONG_TAP");
 
     // initialize array of touch points
     for (int i = 0; i < MaximumTouchPoints; i++) {
@@ -83,6 +87,35 @@ QWebOSScreenEventHandler::QWebOSScreenEventHandler(QWebOSIntegration *integratio
 
         // nothing touching
         m_touchPoints[i].state = Qt::TouchPointReleased;
+
+        m_touchIgnoreEvents[i] = false;
+        if (rightClickOnLongTap)
+            connect(&m_touchTimers[i], &QTimer::timeout, [this,i]() { handleLongTap(i); });
+        m_touchTimers[i].setInterval(LONGTAP_TIMEOUT_MS);
+        m_touchTimers[i].setSingleShot(true);
+    }
+}
+
+static QWindow *targetWindow(const QPoint &pos)
+{
+    // Map window handle to top-level QWindow
+    QWindow *w = QGuiApplication::topLevelAt(pos);
+    if (!w || !(w->type() != Qt::Desktop && w->isExposed() && w->geometry().contains(pos)) )
+        w = QGuiApplication::focusWindow();
+    return w;
+}
+
+void QWebOSScreenEventHandler::handleLongTap(int touchId)
+{
+    QPoint mousePos = m_touchPoints[touchId].area.topLeft().toPoint();
+    QWindow *w = targetWindow(mousePos);
+
+    if (w) {
+        QPointF localPos = w->mapFromGlobal(mousePos);
+        QWindowSystemInterface::handleTouchCancelEvent(w, m_touchDevice);
+        QWindowSystemInterface::handleMouseEvent(w, localPos, mousePos, Qt::RightButton, Qt::NoModifier);
+        QWindowSystemInterface::handleMouseEvent(w, localPos, mousePos, Qt::NoButton, Qt::NoModifier);
+        m_touchIgnoreEvents[touchId] = true;
     }
 }
 
@@ -189,11 +222,7 @@ void QWebOSScreenEventHandler::handleTouchEvent(SDL_Event event)
     // check if finger is valid
     if (touchId < MaximumTouchPoints) {
 
-        // Map window handle to top-level QWindow
-        QWindow *w = QGuiApplication::focusWindow();
-        if (!w)
-            w = QGuiApplication::topLevelAt(pos);
-
+        QWindow *w = targetWindow(pos);
         if (w) {
             m_touchPoints[touchId].area = QRectF(pos.x(), pos.y(), 0, 0);
             // determine event type and update state of current touch point
@@ -201,17 +230,26 @@ void QWebOSScreenEventHandler::handleTouchEvent(SDL_Event event)
             switch (event.type) {
             case SDL_MOUSEBUTTONDOWN:
                 m_touchPoints[touchId].state = Qt::TouchPointPressed;
+                m_touchTimers[touchId].start();
+                m_touchPointsStartPos[touchId] = pos;
+                m_touchIgnoreEvents[touchId] = false;
                 type = QEvent::TouchBegin;
                 break;
             case SDL_MOUSEMOTION:
                 m_touchPoints[touchId].state = Qt::TouchPointMoved;
                 type = QEvent::TouchUpdate;
+                if ((m_touchPointsStartPos[touchId] - pos).manhattanLength() > MAX_TAP_MOVE_PIXEL) {
+                    m_touchTimers[touchId].stop();
+                }
                 break;
             case SDL_MOUSEBUTTONUP:
                 m_touchPoints[touchId].state = Qt::TouchPointReleased;
                 type = QEvent::TouchEnd;
+                m_touchTimers[touchId].stop();
                 break;
             }
+
+            if (m_touchIgnoreEvents[touchId]) return;
 
             // build list of active touch points
             QList<QWindowSystemInterface::TouchPoint> pointList;

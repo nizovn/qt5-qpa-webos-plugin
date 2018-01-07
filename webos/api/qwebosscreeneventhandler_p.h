@@ -44,6 +44,7 @@
 
 #include <SDL.h>
 #include <PDL.h>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 
@@ -71,6 +72,7 @@ private:
     void handleKeyboardEvent(SDL_Event event);
     void handleTouchEvent(SDL_Event event);
     void handleActiveEvent(SDL_Event event);
+    void handleLongTap(int touchId);
 
 private:
     enum {
@@ -80,6 +82,9 @@ private:
     QWebOSIntegration *m_webosIntegration;
     QTouchDevice *m_touchDevice;
     QWindowSystemInterface::TouchPoint m_touchPoints[MaximumTouchPoints];
+    QPoint m_touchPointsStartPos[MaximumTouchPoints];
+    bool m_touchIgnoreEvents[MaximumTouchPoints];
+    QTimer m_touchTimers[MaximumTouchPoints];
     QWebOSScreenEventThread *m_eventThread;
 };
 
