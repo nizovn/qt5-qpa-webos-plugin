@@ -7,6 +7,9 @@ SOURCES +=  $$PWD/qweboswindow.cpp \
             $$PWD/qwebosinputcontext.cpp \
             $$PWD/qwebosglcontext.cpp \
             $$PWD/qwebosoffscreenwindow.cpp \
+            $$PWD/qwebosopenglcompositor.cpp \
+            $$PWD/qwebosopenglcompositorbackingstore.cpp \
+            $$PWD/qweboswindowframe.cpp \
             $$PWD/qwebosservices.cpp
 
 HEADERS +=  $$PWD/qweboswindow_p.h \
@@ -18,6 +21,9 @@ HEADERS +=  $$PWD/qweboswindow_p.h \
             $$PWD/qwebosinputcontext_p.h \
             $$PWD/qwebosglcontext_p.h \
             $$PWD/qwebosglobal_p.h \
+            $$PWD/qwebosopenglcompositor_p.h \
+            $$PWD/qwebosopenglcompositorbackingstore_p.h \
+            $$PWD/qweboswindowframe_p.h \
             $$PWD/qwebosservices_p.h
 
 INCLUDEPATH += $$PWD

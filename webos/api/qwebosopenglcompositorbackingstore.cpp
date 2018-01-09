@@ -44,8 +44,8 @@
 #include <qpa/qplatformbackingstore.h>
 #include <private/qwindow_p.h>
 
-#include "qopenglcompositorbackingstore_p.h"
-#include "qopenglcompositor_p.h"
+#include "qwebosopenglcompositorbackingstore_p.h"
+#include "qwebosopenglcompositor_p.h"
 
 #ifndef GL_UNPACK_ROW_LENGTH
 #define GL_UNPACK_ROW_LENGTH              0x0CF2

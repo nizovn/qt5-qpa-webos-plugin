@@ -43,7 +43,7 @@
 #include <private/qguiapplication_p.h>
 #include <QtGui/private/qopenglcontext_p.h>
 #include <QtGui/QOpenGLContext>
-#include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
+#include "qwebosopenglcompositorbackingstore_p.h"
 
 #include "qweboswindow_p.h"
 
@@ -54,6 +54,7 @@ QWebOSWindow::QWebOSWindow(QWindow *w)
       m_backingStore(0),
       m_raster(false),
       m_winId(0),
+      m_frame(new QWebOSWindowFrame(this)),
       m_surface(NULL),
       m_flags(0)
 {
@@ -62,6 +63,7 @@ QWebOSWindow::QWebOSWindow(QWindow *w)
 QWebOSWindow::~QWebOSWindow()
 {
     destroy();
+    delete m_frame;
 }
 
 static WId newWId()
@@ -276,6 +278,23 @@ const QPlatformTextureList *QWebOSWindow::textures() const
         return m_backingStore->textures();
 
     return 0;
+}
+
+QMargins QWebOSWindow::frameMargins() const
+{
+    return m_frame->frameMargins();
+}
+
+bool QWebOSWindow::handleTouchEventFrame(QWindowSystemInterface::TouchPoint &point) const
+{
+    m_frame->handleTouchEvent(point);
+    QPoint pos(point.area.topLeft().toPoint());
+    return (window()->frameGeometry().contains(pos) && !window()->geometry().contains(pos));
+}
+
+void QWebOSWindow::drawFrame(QPainter &painter)
+{
+    m_frame->drawFrame(painter);
 }
 
 void QWebOSWindow::endCompositing()

@@ -42,7 +42,8 @@
 #include <QtGui/QWindow>
 #include <qpa/qplatformbackingstore.h>
 
-#include "qopenglcompositor_p.h"
+#include "qwebosopenglcompositor_p.h"
+#include <QOpenGLPaintDevice>
 
 QT_BEGIN_NAMESPACE
 
@@ -138,18 +139,27 @@ void QOpenGLCompositor::renderAll(QOpenGLFramebufferObject *fbo)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glViewport(0, 0, m_nativeTargetGeometry.width(), m_nativeTargetGeometry.height());
 
+    static QOpenGLPaintDevice *device = new QOpenGLPaintDevice;
+    device->setSize(m_nativeTargetGeometry.size());
+    QPainter painter(device);
+
     if (!m_blitter.isCreated())
         m_blitter.create();
 
-    m_blitter.bind();
+    for (int i = 0; i < m_windows.size(); ++i) {
 
-    for (int i = 0; i < m_windows.size(); ++i)
+        m_windows.at(i)->drawFrame(painter);
+
+        painter.beginNativePainting();
+
+        m_blitter.bind();
         m_windows.at(i)->beginCompositing();
-
-    for (int i = 0; i < m_windows.size(); ++i)
         render(m_windows.at(i));
+        m_blitter.release();
 
-    m_blitter.release();
+        painter.endNativePainting();
+    }
+
     if (!fbo)
         m_context->swapBuffers(m_targetWindow);
     else
@@ -257,6 +267,7 @@ void QOpenGLCompositor::render(QOpenGLCompositorWindow *window)
     }
 
     m_blitter.setOpacity(1.0f);
+
 }
 
 QOpenGLCompositor *QOpenGLCompositor::instance()

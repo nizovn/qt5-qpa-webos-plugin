@@ -59,7 +59,7 @@
 #include <QtFontDatabaseSupport/private/qgenericunixfontdatabase_p.h>
 #include <QtThemeSupport/private/qgenericunixthemes_p.h>
 #include <QtEventDispatcherSupport/private/qgenericunixeventdispatcher_p.h>
-#include <QtPlatformCompositorSupport/private/qopenglcompositorbackingstore_p.h>
+#include "qwebosopenglcompositorbackingstore_p.h"
 
 #include <SDL.h>
 #include <PDL.h>

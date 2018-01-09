@@ -40,7 +40,7 @@
 #include <QtCore/qtextstream.h>
 #include <QtGui/qwindow.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
+#include "qwebosopenglcompositor_p.h"
 #include <private/qmath_p.h>
 
 #include "qwebosscreen_p.h"

@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QOPENGLCOMPOSITOR_H
-#define QOPENGLCOMPOSITOR_H
+#ifndef QWEBOSWINDOWFRAME_H
+#define QWEBOSWINDOWFRAME_H
 
 //
 //  W A R N I N G
@@ -51,74 +51,35 @@
 // We mean it.
 //
 
-#include <QtCore/QTimer>
-#include <QtGui/QOpenGLTextureBlitter>
-#include <QtGui/QMatrix4x4>
+#include "qwebosglobal_p.h"
 #include <QPainter>
+#include <qpa/qwindowsysteminterface.h>
+
+class QWebOSWindow;
 
 QT_BEGIN_NAMESPACE
 
-class QOpenGLContext;
-class QOpenGLFramebufferObject;
-class QWindow;
-class QPlatformTextureList;
-
-class QOpenGLCompositorWindow
+class Q_WEBOS_EXPORT QWebOSWindowFrame
 {
 public:
-    virtual ~QOpenGLCompositorWindow() { }
-    virtual QWindow *sourceWindow() const = 0;
-    virtual const QPlatformTextureList *textures() const = 0;
-    virtual void beginCompositing() { }
-    virtual void drawFrame(QPainter &) { }
-    virtual void endCompositing() { }
-};
+    QWebOSWindowFrame(QWebOSWindow *w);
+    ~QWebOSWindowFrame();
 
-class QOpenGLCompositor : public QObject
-{
-    Q_OBJECT
-
-public:
-    static QOpenGLCompositor *instance();
-    static void destroy();
-
-    void setTarget(QOpenGLContext *context, QWindow *window, const QRect &nativeTargetGeometry);
-    void setRotation(int degrees);
-    QOpenGLContext *context() const { return m_context; }
-    QWindow *targetWindow() const { return m_targetWindow; }
-
-    void update();
-    QImage grab();
-
-    QList<QOpenGLCompositorWindow *> windows() const { return m_windows; }
-    void addWindow(QOpenGLCompositorWindow *window);
-    void removeWindow(QOpenGLCompositorWindow *window);
-    void moveToTop(QOpenGLCompositorWindow *window);
-    void changeWindowIndex(QOpenGLCompositorWindow *window, int newIdx);
-
-signals:
-    void topWindowChanged(QOpenGLCompositorWindow *window);
-
-private slots:
-    void handleRenderAllRequest();
+    void drawFrame(QPainter &painter);
+    bool hasFrame() const;
+    QMargins frameMargins() const;
+    void handleTouchEvent(QWindowSystemInterface::TouchPoint &point);
 
 private:
-    QOpenGLCompositor();
-    ~QOpenGLCompositor();
+    QRect closeButtonRect() const;
 
-    void renderAll(QOpenGLFramebufferObject *fbo);
-    void render(QOpenGLCompositorWindow *window);
-
-    QOpenGLContext *m_context;
-    QWindow *m_targetWindow;
-    QRect m_nativeTargetGeometry;
-    int m_rotation;
-    QMatrix4x4 m_rotationMatrix;
-    QTimer m_updateTimer;
-    QOpenGLTextureBlitter m_blitter;
-    QList<QOpenGLCompositorWindow *> m_windows;
+private:
+    QWebOSWindow *m_window;
+    bool m_closeButtonPressed;
+    int m_titleSize;
+    int m_borderSize;
 };
 
 QT_END_NAMESPACE
 
-#endif // QOPENGLCOMPOSITOR_H
+#endif // QWEBOSWINDOWFRAME_H

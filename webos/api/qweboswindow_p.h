@@ -54,9 +54,10 @@
 #include "qwebosglobal_p.h"
 #include "qwebosintegration_p.h"
 #include "qwebosscreen_p.h"
+#include "qweboswindowframe_p.h"
 
 #include <qpa/qplatformwindow.h>
-#include <QtPlatformCompositorSupport/private/qopenglcompositor_p.h>
+#include "qwebosopenglcompositor_p.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -73,6 +74,7 @@ public:
 
     void setGeometry(const QRect &) override;
     QRect geometry() const override;
+    QMargins frameMargins() const override;
     void setVisible(bool visible) override;
     void requestActivateWindow() override;
     void raise() override;
@@ -100,11 +102,14 @@ public:
     QWindow *sourceWindow() const override;
     const QPlatformTextureList *textures() const override;
     void endCompositing() override;
+    void drawFrame(QPainter &painter) override;
+    bool handleTouchEventFrame(QWindowSystemInterface::TouchPoint &point) const;
 
 protected:
     QOpenGLCompositorBackingStore *m_backingStore;
     bool m_raster;
     WId m_winId;
+    QWebOSWindowFrame *m_frame;
 
     void *m_surface;
 

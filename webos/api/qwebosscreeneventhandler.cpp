@@ -40,6 +40,7 @@
 #include "qwebosscreeneventhandler_p.h"
 #include "qwebosscreeneventthread_p.h"
 #include "qwebosintegration_p.h"
+#include "qweboswindow_p.h"
 
 #include <QDebug>
 #include <QGuiApplication>
@@ -47,6 +48,7 @@
 #include <errno.h>
 
 #include <QtGui/private/qwindow_p.h>
+#include <private/qhighdpiscaling_p.h>
 
 #if defined(QWEBOSSCREENEVENT_DEBUG)
 #define qScreenEventDebug qDebug
@@ -98,9 +100,17 @@ QWebOSScreenEventHandler::QWebOSScreenEventHandler(QWebOSIntegration *integratio
 
 static QWindow *targetWindow(const QPoint &pos)
 {
-    // Map window handle to top-level QWindow
-    QWindow *w = QGuiApplication::topLevelAt(pos);
-    if (!w || !(w->type() != Qt::Desktop && w->isExposed() && w->geometry().contains(pos)) )
+    // Map window handle to top-level QWindow (including frame)
+    const QWindowList list = QGuiApplication::topLevelWindows();
+    QWindow *w = 0;
+    for (int i = list.size()-1; i >= 0; --i) {
+        QWindow *_w = list[i];
+        if (_w->isVisible() && QHighDpi::toNativePixels(_w->frameGeometry(), _w).contains(pos)) {
+            w = _w;
+            break;
+        }
+    }
+    if (!w || !(w->type() != Qt::Desktop && w->isExposed() && w->frameGeometry().contains(pos)) )
         w = QGuiApplication::focusWindow();
     return w;
 }
@@ -110,7 +120,7 @@ void QWebOSScreenEventHandler::handleLongTap(int touchId)
     QPoint mousePos = m_touchPoints[touchId].area.topLeft().toPoint();
     QWindow *w = targetWindow(mousePos);
 
-    if (w) {
+    if (w && w->geometry().contains(mousePos)) {
         QPointF localPos = w->mapFromGlobal(mousePos);
         QWindowSystemInterface::handleTouchCancelEvent(w, m_touchDevice);
         QWindowSystemInterface::handleMouseEvent(w, localPos, mousePos, Qt::RightButton, Qt::NoModifier);
@@ -250,6 +260,10 @@ void QWebOSScreenEventHandler::handleTouchEvent(SDL_Event event)
             }
 
             if (m_touchIgnoreEvents[touchId]) return;
+
+            QWebOSWindow *webOSWindow = static_cast<QWebOSWindow *>(w->handle());
+            if (webOSWindow->handleTouchEventFrame(m_touchPoints[touchId]))
+                return;
 
             // build list of active touch points
             QList<QWindowSystemInterface::TouchPoint> pointList;
