@@ -12,13 +12,14 @@ MY_PREFIX=/home/nizovn/webos/qt5/qt5.9/runtime
 -hostprefix ${MY_PREFIX}/host \
 -opensource \
 -confirm-license \
+-qt-freetype \
 -openssl \
 -openssl-linked \
 -feature-accessibility \
 -accessibility \
 -skip qtandroidextras -skip qtactiveqt -skip qtdoc  \
 -skip qtserialport  -skip qtwayland \
--skip qtmacextras -skip qtlocation -skip sensors \
+-skip qtmacextras -skip qtlocation \
 -skip qtx11extras -skip qtwinextras \
 -skip qttools \
 -skip qtenginio -skip qtactiveqt \

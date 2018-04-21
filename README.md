@@ -16,7 +16,7 @@ Download Qt sources (**qt-everywhere-opensource-src-5.9.1.tar.xz**) from [offici
 
 Download and untar gcc cross toolchain (**gcc-linaro-4.8-2015.06-x86\_64\_arm-linux-gnueabi.tar.xz**) from [linaro site](https://releases.linaro.org/archive/15.06/components/toolchain/binaries/4.8/arm-linux-gnueabi/).
 
-    tar xvf gcc-linaro-4.9-2016.02-x86_64_arm-linux-gnueabi.tar.xz -C /home/nizovn/webos/qt5/qt5.9
+    tar xvf gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabi.tar.xz -C /home/nizovn/webos/qt5/qt5.9
 Copy **files/linux-webos-arm-gnueabi-g++** directory to **qt-everywhere-opensource-src-5.9.1/qtbase/mkspecs**. Edit **QT5\_WEBOS\_PATH** variable in **qmake.conf** to your directory.
 
 Copy libraries and headers required for building Qt.
