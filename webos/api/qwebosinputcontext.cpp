@@ -124,7 +124,7 @@ void QWebOSInputContext::showInputPanel()
     qInputContextDebug();
     if (!m_inputPanelVisible) {
         PDL_SetKeyboardState(PDL_TRUE);
-        m_inputPanelVisible = true;
+        keyboardVisibilityChanged(true);
     }
 }
 
@@ -133,7 +133,7 @@ void QWebOSInputContext::hideInputPanel()
     qInputContextDebug();
     if (m_inputPanelVisible) {
         PDL_SetKeyboardState(PDL_FALSE);
-        m_inputPanelVisible = false;
+        keyboardVisibilityChanged(false);
     }
 }
 

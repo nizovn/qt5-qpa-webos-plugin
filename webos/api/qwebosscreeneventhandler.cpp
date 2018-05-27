@@ -158,7 +158,7 @@ bool QWebOSScreenEventHandler::handleEvent(SDL_Event event)
 void QWebOSScreenEventHandler::injectKeyboardEvent(SDL_Event event)
 {
     // determine event type
-    QEvent::Type type = (event.type == SDL_KEYUP) ? QEvent::KeyPress : QEvent::KeyRelease;
+    QEvent::Type type = (event.type == SDL_KEYDOWN) ? QEvent::KeyPress : QEvent::KeyRelease;
     int keyToPass = event.key.keysym.unicode;
     if (keyToPass == PDLK_GESTURE_DISMISS_KEYBOARD) {
         clearCurrentFocusObject();
@@ -264,6 +264,10 @@ void QWebOSScreenEventHandler::handleTouchEvent(SDL_Event event)
             QWebOSWindow *webOSWindow = static_cast<QWebOSWindow *>(w->handle());
             if (webOSWindow->handleTouchEventFrame(m_touchPoints[touchId]))
                 return;
+
+            QWindow *focusWindow = QGuiApplication::focusWindow();
+            if ((type == QEvent::TouchBegin) && (focusWindow->type() == Qt::Popup) && (focusWindow != w))
+                focusWindow->close();
 
             // build list of active touch points
             QList<QWindowSystemInterface::TouchPoint> pointList;

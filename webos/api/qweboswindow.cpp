@@ -109,7 +109,7 @@ void QWebOSWindow::create()
         if (Q_UNLIKELY(!isRaster() || !compositor->targetWindow())) {
             // We can have either a single OpenGL window or multiple raster windows.
             // Other combinations cannot work.
-            qFatal("WEBOS: OpenGL windows cannot be mixed with others.");
+            qWarning("WEBOS: OpenGL windows cannot be mixed with others.");
             return;
         }
         m_format = compositor->targetWindow()->format();
@@ -225,7 +225,8 @@ void QWebOSWindow::requestActivateWindow()
     if (window()->type() != Qt::Desktop)
         QOpenGLCompositor::instance()->moveToTop(this);
     QWindow *wnd = window();
-    QWindowSystemInterface::handleWindowActivated(wnd);
+    if (window()->type() == Qt::Window)
+        QWindowSystemInterface::handleWindowActivated(wnd);
     QWindowSystemInterface::handleExposeEvent(wnd, QRect(QPoint(0, 0), wnd->geometry().size()));
 }
 
