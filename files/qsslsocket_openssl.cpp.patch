@@ -1,4 +1,6 @@
-754a755,757
->   # ifdef Q_OS_WEBOS
+749a750,752
+>     #ifdef Q_OS_WEBOS
 >         systemCerts.append(QSslCertificate::fromPath(QLatin1String("/media/cryptofs/apps/usr/palm/applications/com.nizovn.cacert/files/cert.pem"), QSsl::Pem));
->   # endif
+>     #else
+751a755
+>     #endif
