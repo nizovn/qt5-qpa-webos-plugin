@@ -1,0 +1,96 @@
+54a55,59
+> #ifdef Q_OS_WEBOS
+> #define WEBOS_APPDATA_PATH "/media/internal/appdata/com.nizovn.qt5"
+> #define WEBOS_HOME_PATH "/media/internal"
+> #endif // Q_OS_WEBOS
+> 
+82a88,94
+> 
+> #ifdef Q_OS_WEBOS
+>         QString homePath = QLatin1String(WEBOS_APPDATA_PATH);
+> #else
+>         QString homePath = QDir::homePath();
+> #endif // Q_OS_WEBOS
+> 
+84c96
+<             xdgCacheHome = QDir::homePath() + QLatin1String("/.qttest/cache");
+---
+>             xdgCacheHome = homePath + QLatin1String("/.qttest/cache");
+86c98
+<             xdgCacheHome = QDir::homePath() + QLatin1String("/.cache");
+---
+>             xdgCacheHome = homePath + QLatin1String("/.cache");
+95a108,114
+> 
+> #ifdef Q_OS_WEBOS
+>         QString homePath = QLatin1String(WEBOS_APPDATA_PATH);
+> #else
+>         QString homePath = QDir::homePath();
+> #endif // Q_OS_WEBOS
+> 
+97c116
+<             xdgDataHome = QDir::homePath() + QLatin1String("/.qttest/share");
+---
+>             xdgDataHome = homePath + QLatin1String("/.qttest/share");
+99c118
+<             xdgDataHome = QDir::homePath() + QLatin1String("/.local/share");
+---
+>             xdgDataHome = homePath + QLatin1String("/.local/share");
+109a129,135
+> 
+> #ifdef Q_OS_WEBOS
+>         QString homePath = QLatin1String(WEBOS_APPDATA_PATH);
+> #else
+>         QString homePath = QDir::homePath();
+> #endif // Q_OS_WEBOS
+> 
+111c137
+<             xdgConfigHome = QDir::homePath() + QLatin1String("/.qttest/config");
+---
+>             xdgConfigHome = homePath + QLatin1String("/.qttest/config");
+113c139
+<             xdgConfigHome = QDir::homePath() + QLatin1String("/.config");
+---
+>             xdgConfigHome = homePath + QLatin1String("/.config");
+174a201,207
+> 
+> #ifdef Q_OS_WEBOS
+>         QString homePath = QLatin1String(WEBOS_APPDATA_PATH);
+> #else
+>         QString homePath = QDir::homePath();
+> #endif // Q_OS_WEBOS
+> 
+176c209
+<         xdgConfigHome = QDir::homePath() + QLatin1String("/.config");
+---
+>         xdgConfigHome = homePath + QLatin1String("/.config");
+238a272,274
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH);
+> #endif // Q_OS_WEBOS
+241a278,280
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH);
+> #endif // Q_OS_WEBOS
+244a284,286
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH);
+> #endif // Q_OS_WEBOS
+252a295,297
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH);
+> #endif // Q_OS_WEBOS
+256a302,304
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH);
+> #endif // Q_OS_WEBOS
+259a308,310
+> #ifdef Q_OS_WEBOS
+>         path = QLatin1String(WEBOS_HOME_PATH) + QLatin1String("/downloads");
+> #endif // Q_OS_WEBOS
+343a395,399
+> #ifdef Q_OS_WEBOS
+>         dirs = xdgDataDirs();
+>         for (int i = 0; i < dirs.count(); ++i)
+>             dirs[i].append(QLatin1String("/fonts"));
+> #endif // Q_OS_WEBOS

@@ -1,0 +1,11 @@
+2596a2597,2606
+> #ifdef Q_OS_WEBOS
+>         installPathPlugins = "/media/cryptofs/apps/usr/palm/applications/com.nizovn.qt5qpaplugins/plugins";
+>         if (QFile::exists(installPathPlugins)) {
+>             // Make sure we convert from backslashes to slashes.
+>             installPathPlugins = QDir(installPathPlugins).canonicalPath();
+>             if (!app_libpaths->contains(installPathPlugins))
+>                 app_libpaths->append(installPathPlugins);
+>         }
+> #endif // Q_OS_WEBOS
+> 

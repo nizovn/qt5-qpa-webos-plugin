@@ -3,11 +3,12 @@ export PKG_CONFIG_LIBDIR=$SYSROOT_PKG/usr/lib/pkgconfig
 export PKG_CONFIG_SYSROOT_DIR=$SYSROOT_PKG
 
 MY_PREFIX=/home/nizovn/webos/qt5/qt5.9/runtime
+WEBOS_PREFIX=/media/cryptofs/apps/usr/palm/applications/com.nizovn.qt5
 
 ./configure \
 -no-gcc-sysroot \
 -sysroot ${SYSROOT_PKG} \
--prefix ${MY_PREFIX} \
+-prefix ${WEBOS_PREFIX} \
 -extprefix ${MY_PREFIX} \
 -hostprefix ${MY_PREFIX}/host \
 -opensource \
@@ -58,4 +59,5 @@ MY_PREFIX=/home/nizovn/webos/qt5/qt5.9/runtime
 -pepper-plugins \
 -printing-and-pdf \
 -webrtc \
+-qpa webos \
 -opengl es2
